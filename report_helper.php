@@ -1487,23 +1487,31 @@ indiciaData.reports.$group.$uniqueName = $('#".$options['id']."').reportgrid({
    * @param array $options Options passed to the report control, which should contain the column definitions.
    */
   private static function get_direct_mode_params_form($options) {
+    global $indicia_templates;
     $reloadUrl = self::get_reload_link_parts();
-    $r = '<form action="'.$reloadUrl['path'].'" method="get" class="linear-form" id="filterForm-'.$options['id'].'">';
-    $r .= '<label for="filters" class="auto">'.lang::get('Filter for').'</label> ';
     $value = (isset($_GET['filters'])) ? ' value="'.$_GET['filters'].'"' : '';
-    $r .= '<input type="text" name="filters" id="filters" class="filterInput"'.$value.'/> ';
-    $r .= '<label for="columns" class="auto">'.lang::get('in').'</label> <select name="columns" class="filterSelect" id="columns">';
-
+    $optionsHtml = '';
     foreach ($options['columns'] as $column) {
       if (isset($column['fieldname']) && isset($column['display']) && (!isset($column['visible']) || $column['visible']===false)) {
         $selected = (isset($_GET['columns']) && $_GET['columns']==$column['fieldname']) ? ' selected="selected"' : '';
-        $r .= "<option value=\"".$column['fieldname']."\"$selected>".$column['display']."</option>";
+        $optionsHtml .= "<option value=\"$column[fieldname]\"$selected>$column[display]</option>";
       }
     }
-    $r .= "</select>\n";
-    $r .= '<input type="submit" value="Filter" class="run-filter ui-corner-all ui-state-default"/>'.
-        '<button class="clear-filter" style="display: none">Clear</button>';
-    $r .= "</form>\n";
+    $langIn = lang::get('in');
+    $langFilterFor = lang::get('Filter for');
+    $ctrlClass = isset($indicia_templates['formControlClass']) ? " $indicia_templates[formControlClass]" : '';
+    $r = <<<HTML
+<form action="$reloadUrl[path]" method="get" class="form-inline" id="filterForm-$options[id]">
+<label for="filters" class="auto">$langFilterFor</label>
+<input type="text" name="filters" id="filters" class="filterInput$ctrlClass"$value />
+<label for="columns" class="auto">$langIn</label>
+<select name="columns" class="filterSelect$ctrlClass" id="columns">
+  $optionsHtml
+</select>
+<input type="submit" value="Filter" class="run-filter $indicia_templates[buttonDefaultClass]"/>
+<button class="clear-filter" style="display: none">Clear</button>
+</form>
+HTML;
     return $r;
   }
 
