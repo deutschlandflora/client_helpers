@@ -385,35 +385,48 @@ class helper_base extends helper_config {
   );
 
   /**
-   * List of methods used to report a validation failure. Options are message, message, hint, icon, colour, inline.
-   * The inline option specifies that the message should appear on the same line as the control.
-   * Otherwise it goes on the next line, indented by the label width. Because in many cases, controls
-   * on an Indicia form occupy the full available width, it is often more appropriate to place error
-   * messages on the next line so this is the default behaviour.
+   * List of methods used to report a validation failure.
+   *
+   * Options are message, message, hint, icon, colour, inline. The inline option specifies that the
+   * message should appear on the same line as the control. Otherwise it goes on the next line,
+   * indented by the label width. Because in many cases, controls on an Indicia form occupy the
+   * full available width, it is often more appropriate to place error messages on the next line
+   * so this is the default behaviour.
+   *
    * @var array
    */
-  public static $validation_mode=array('message', 'colour');
+  public static $validation_mode = array('message', 'colour');
 
   /**
-   * @var array Name of the form which has been set up for jQuery validation, if any.
+   * Name of the form which has been set up for jQuery validation, if any.
+   *
+   * @var array
    */
   public static $validated_form_id = null;
 
   /**
-   * @var string Helptext positioning. Determines where the information is displayed when helpText is defined for a control.
+   * Helptext positioning.
+   *
+   * Determines where the information is displayed when helpText is defined for a control.
    * Options are before, after.
+   *
+   * @var string
    */
-  public static $helpTextPos='after';
+  public static $helpTextPos = 'after';
 
   /**
-   * @var string Form Mode. Initially unset indicating new input, but can be set to ERRORS or RELOAD.
+   * Form Mode. Initially unset indicating new input, but can be set to ERRORS or RELOAD.
+   *
+   * @var string
    */
-  public static $form_mode=null;
+  public static $form_mode = NULL;
 
   /**
-   * @var array List of all error messages returned from an attempt to save.
+   * List of all error messages returned from an attempt to save.
+   *
+   * @var array
    */
-  public static $validation_errors=null;
+  public static $validation_errors = NULL;
 
   /**
    * @var Array of default validation rules to apply to the controls on the form if the
@@ -423,7 +436,7 @@ class helper_base extends helper_config {
    * Warehouse.
    */
   public static $default_validation_rules = array(
-    'sample:date' => array('required','date'),
+    'sample:date' => array('required', 'date'),
     'sample:entered_sref' => array('required'),
     'occurrence:taxa_taxon_list_id' => array('required'),
     'location:name' => array('required'),
@@ -431,22 +444,26 @@ class helper_base extends helper_config {
   );
 
   /**
-   * @var array List of messages defined to pass to the validation plugin.
+   * List of messages defined to pass to the validation plugin.
+   *
+   * @var array
    */
   public static $validation_messages = array();
 
 
   /**
-   * @var integer Length of time in seconds after which cached Warehouse responses will start to expire.
+   * Length of time in seconds after which cached Warehouse responses will start to expire.
+   *
+   * @var integer
    */
-  public static $cache_timeout=3600;
+  public static $cache_timeout = 3600;
 
   /**
    * @var integer On average, every 1 in $cache_chance_expire times the Warehouse is called for data which is
    * cached but older than the cache timeout, the cached data will be refreshed. This introduces a random element to
    * cache refreshes so that no single form load event is responsible for refreshing all cached content.
    */
-  public static $cache_chance_refresh_file=10;
+  public static $cache_chance_refresh_file = 10;
 
   /**
    * @var integer On average, every 1 in $cache_chance_purge times the Warehouse is called for data, all files
@@ -466,12 +483,20 @@ class helper_base extends helper_config {
   public static $data = array();
 
   /**
-   * @var string Google API key. Placed here rather than helper_config.php, as only recently introduced.
+   * Google API key.
+   *
+   * Placed here rather than helper_config.php, as only recently introduced.
+   *
+   * @var string
    */
   public static $google_api_key = '';
 
   /**
-   * @var string Google Maps API key. Placed here rather than helper_config.php, as only recently introduced.
+   * Google Maps API key.
+   *
+   * Placed here rather than helper_config.php, as only recently introduced.
+   *
+   * @var string
    */
   public static $google_maps_api_key = '';
 
@@ -483,19 +508,22 @@ class helper_base extends helper_config {
    * @todo Need to ensure this setting is utilised every where it should be.
    *
    */
-  public static $date_format='d/m/Y';
+  public static $date_format = 'd/m/Y';
 
   /**
-   * @var Boolean indicates if any form controls have specified the lockable option.
-   * If so, we will need to output some javascript.
+   * Indicates if any form controls have specified the lockable option.
+   *
+   * If any form controls have specified the lockable option we will need to output some javascript.
+   *
+   * @var bool
    */
-  protected static $using_locking = false;
+  protected static $using_locking = FALSE;
 
   /**
-   * @var Boolean Are we linking in the default stylesheet? Handled sligtly different to the others so it can be added to the end of the
+   * @var bool Are we linking in the default stylesheet? Handled sligtly different to the others so it can be added to the end of the
    * list, allowing our CSS to override other stuff.
    */
-  protected static $default_styles = false;
+  protected static $default_styles = FALSE;
 
   /**
    * Array of html attributes. When replacing items in a template, these get automatically wrapped. E.g.
@@ -509,20 +537,27 @@ class helper_base extends helper_config {
   );
 
   /**
-   * @var array List of error messages that have been displayed, so we don't duplicate them when dumping any
-   * remaining ones at the end.
+   * List of error messages that have been displayed.
+   *
+   * Ensures we don't duplicate them when dumping any remaining ones at the end.
+   *
+   * @var array
    */
-  protected static $displayed_errors=array();
+  protected static $displayed_errors = array();
 
   /**
    * Track if we have already output the indiciaFunctions.
+   *
+   * @var bool
    */
-  protected static $indiciaFnsDone = false;
+  protected static $indiciaFnsDone = FALSE;
 
   /**
    * Utility function to insert a list of translated text items for use in JavaScript.
+   *
    * @param string $group
-   * @param array $strings Associative array of keys and texts to translate.
+   * @param array $strings
+   *   Associative array of keys and texts to translate.
    */
   protected static function addLanguageStringsToJs($group, $strings) {
     self::$javascript .= <<<JS
@@ -547,64 +582,64 @@ JS;
    * Ensures each file is only linked once and that dependencies are included
    * first and in the order given.
    *
-   * @param string $resource Name of resource to link. The following options are available:
-   * <ul>
-   * <li>indiciaFns</li>
-   * <li>jquery</li>
-   * <li>openlayers</li>
-   * <li>graticule</li>
-   * <li>clearLayer</li>
-   * <li>addrowtogrid</li>
-   * <li>speciesFilterPopup</li>
-   * <li>indiciaMapPanel</li>
-   * <li>indiciaMapEdit</li>
-   * <li>postcode_search</li>
-   * <li>locationFinder</li>
-   * <li>createPersonalSites</li>
-   * <li>autocomplete</li>
-   * <li>indicia_locks</li>
-   * <li>jquery_cookie</li>
-   * <li>jquery_ui</li>
-   * <li>jquery_ui_fr</li>
-   * <li>jquery_form</li>
-   * <li>json</li>
-   * <li>reportPicker</li>
-   * <li>treeview</li>
-   * <li>treeview_async</li>
-   * <li>googlemaps</li>
-   * <li>multimap</li>
-   * <li>virtualearth</li>
-   * <li>fancybox</li>
-   * <li>treeBrowser</li>
-   * <li>defaultStylesheet</li>
-   * <li>validation</li>
-   * <li>plupload</li>
-   * <li>jqplot</li>
-   * <li>jqplot_bar</li>
-   * <li>jqplot_pie</li>
-   * <li>jqplot_category_axis_renderer</li>
-   * <li>jqplot_canvas_axis_label_renderer</li>
-   * <li>jqplot_trendline</li>
-   * <li>reportgrid</li>
-   * <li>tabs</li>
-   * <li>wizardprogress</li>
-   * <li>spatialReports</li>
-   * <li>jsonwidget</li>
-   * <li>timeentry</li>
-   * <li>verification</li>
-   * <li>complexAttrGrid</li>
-   * <li>footable</li>
-   * <li>indiciaFootableReport</li>
-   * <li>indiciaFootableChecklist</li>
-   * <li>html2pdf</li>
-   * <li>review_input</li>
-   * <li>sub_list</li>
-   * <li>georeference_default_geoportal_lu</li>
-   * <li>georeference_defaultgoogle_places</li>
-   * <li>georeference_default_indicia_locations</li>
-   * <li>sref_handlers_4326</li>
-   * <li>sref_handlers_osgb</li>
-   * <li>sref_handlers_osie</li>
+   * @param string $resource
+   *   Name of resource to link. The following options are available:
+   *   * indiciaFns
+   *   * jquery
+   *   * openlayers
+   *   * graticule
+   *   * clearLayer
+   *   * addrowtogrid
+   *   * speciesFilterPopup
+   *   * indiciaMapPanel
+   *   * indiciaMapEdit
+   *   * postcode_search
+   *   * locationFinder
+   *   * createPersonalSites
+   *   * autocomplete
+   *   * indicia_locks
+   *   * jquery_cookie
+   *   * jquery_ui
+   *   * jquery_ui_fr
+   *   * jquery_form
+   *   * json
+   *   * reportPicker
+   *   * treeview
+   *   * treeview_async
+   *   * googlemaps
+   *   * multimap
+   *   * virtualearth
+   *   * fancybox
+   *   * treeBrowser
+   *   * defaultStylesheet
+   *   * validation
+   *   * plupload
+   *   * jqplot
+   *   * jqplot_bar
+   *   * jqplot_pie
+   *   * jqplot_category_axis_renderer
+   *   * jqplot_canvas_axis_label_renderer
+   *   * jqplot_trendline
+   *   * reportgrid
+   *   * tabs
+   *   * wizardprogress
+   *   * spatialReports
+   *   * jsonwidget
+   *   * timeentry
+   *   * verification
+   *   * complexAttrGrid
+   *   * footable
+   *   * indiciaFootableReport
+   *   * indiciaFootableChecklist
+   *   * html2pdf
+   *   * review_input
+   *   * sub_list
+   *   * georeference_default_geoportal_lu
+   *   * georeference_defaultgoogle_places
+   *   * georeference_default_indicia_locations
+   *   * sref_handlers_4326
+   *   * sref_handlers_osgb
+   *   * sref_handlers_osie
    * </ul>
    */
   public static function add_resource($resource)
@@ -631,40 +666,41 @@ JS;
    */
   public static function get_resources()
   {
-    if (self::$resource_list===null) {
+    if (self::$resource_list === NULL) {
       $base = parent::$base_url;
       if (!self::$js_path) {
-        self::$js_path = $base.'media/js/';
-      } else if (substr(self::$js_path,-1)!="/") {
-        // ensure a trailing slash
+        self::$js_path = $base . 'media/js/';
+      }
+      elseif (substr(self::$js_path,-1) != "/") {
+        // Ensure a trailing slash.
         self::$js_path .= "/";
       }
       if (!self::$css_path) {
-        self::$css_path =$base.'media/css/';
-      } else if (substr(self::$css_path,-1)!="/") {
-        // ensure a trailing slash
+        self::$css_path =$base . 'media/css/';
+      } else if (substr(self::$css_path, -1) != "/") {
+        // Ensure a trailing slash.
         self::$css_path .= "/";
       }
       global $indicia_theme, $indicia_theme_path;
       if (!isset($indicia_theme)) {
         // Use default theme if page does not specify it's own.
-        $indicia_theme="default";
+        $indicia_theme = "default";
       }
       if (!isset($indicia_theme_path)) {
         // Use default theme path if page does not specify it's own.
-        $indicia_theme_path=preg_replace('/css\/$/','themes/', self::$css_path);
+        $indicia_theme_path = preg_replace('/css\/$/', 'themes/', self::$css_path);
       }
       // ensure a trailing path
-      if (substr($indicia_theme_path, -1)!=='/')
+      if (substr($indicia_theme_path, -1) !== '/')
         $indicia_theme_path .= '/';
-      $protocol = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS']==='off' ? 'http' : 'https';
+      $protocol = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
       self::$resource_list = array (
-        'indiciaFns' => array('deps' =>array('jquery'), 'javascript' => array(self::$js_path."indicia.functions.js")),
-        'jquery' => array('javascript' => array(self::$js_path."jquery.js",self::$js_path."ie_vml_sizzlepatch_2.js")),
+        'indiciaFns' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path . "indicia.functions.js")),
+        'jquery' => array('javascript' => array(self::$js_path."jquery.js", self::$js_path . "ie_vml_sizzlepatch_2.js")),
         'openlayers' => array('javascript' => array(self::$js_path.(function_exists('iform_openlayers_get_file') ? iform_openlayers_get_file() : "OpenLayers.js"),
             self::$js_path."proj4js.js", self::$js_path."proj4defs.js", self::$js_path."lang/en.js")),
-        'graticule' => array('deps' =>array('openlayers'), 'javascript' => array(self::$js_path."indiciaGraticule.js")),
-        'clearLayer' => array('deps' =>array('openlayers'), 'javascript' => array(self::$js_path."clearLayer.js")),
+        'graticule' => array('deps' => array('openlayers'), 'javascript' => array(self::$js_path."indiciaGraticule.js")),
+        'clearLayer' => array('deps' => array('openlayers'), 'javascript' => array(self::$js_path."clearLayer.js")),
         'addrowtogrid' => array('deps' => array('validation'), 'javascript' => array(self::$js_path."addRowToGrid.js")),
         'speciesFilterPopup' => array('deps' => array('addrowtogrid'), 'javascript' => array(self::$js_path."speciesFilterPopup.js")),
         'indiciaMapPanel' => array('deps' =>array('jquery', 'openlayers', 'jquery_ui', 'jquery_cookie'), 'javascript' => array(self::$js_path."jquery.indiciaMapPanel.js")),
@@ -675,7 +711,11 @@ JS;
         'autocomplete' => array('deps' => array('jquery'), 'stylesheets' => array(self::$css_path."jquery.autocomplete.css"), 'javascript' => array(self::$js_path."jquery.autocomplete.js")),
         'indicia_locks' => array('deps' =>array('jquery_cookie', 'json'), 'javascript' => array(self::$js_path."indicia.locks.js")),
         'jquery_cookie' => array('deps' =>array('jquery'), 'javascript' => array(self::$js_path."jquery.cookie.js")),
-        'jquery_ui' => array('deps' => array('jquery'), 'stylesheets' => array("$indicia_theme_path$indicia_theme/jquery-ui.custom.css"), 'javascript' => array(self::$js_path."jquery-ui.min.js"/*, self::$js_path."jquery-ui.effects.js"*/)),
+        'jquery_ui' => array(
+          'deps' => array('jquery'),
+          'stylesheets' => array("$indicia_theme_path$indicia_theme/jquery-ui.custom.css"),
+          'javascript' => array(self::$js_path."jquery-ui.min.js")
+        ),
         'jquery_ui_fr' => array('deps' => array('jquery_ui'), 'javascript' => array(self::$js_path."jquery.ui.datepicker-fr.js")),
         'jquery_form' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path."jquery.form.js")),
         'json' => array('javascript' => array(self::$js_path."json2.js")),
