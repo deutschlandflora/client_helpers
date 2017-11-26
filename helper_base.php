@@ -454,31 +454,45 @@ class helper_base extends helper_config {
   /**
    * Length of time in seconds after which cached Warehouse responses will start to expire.
    *
-   * @var integer
+   * @var int
    */
   public static $cache_timeout = 3600;
 
   /**
-   * @var integer On average, every 1 in $cache_chance_expire times the Warehouse is called for data which is
+   * Chance of refreshing a cache file.
+   *
+   * On average, every 1 in $cache_chance_expire times the Warehouse is called for data which is
    * cached but older than the cache timeout, the cached data will be refreshed. This introduces a random element to
    * cache refreshes so that no single form load event is responsible for refreshing all cached content.
+   *
+   * @var int
    */
   public static $cache_chance_refresh_file = 10;
 
   /**
-   * @var integer On average, every 1 in $cache_chance_purge times the Warehouse is called for data, all files
+   * Chance of purging the cache.
+   *
+   * On average, every 1 in $cache_chance_purge times the Warehouse is called for data, all files
    * older than 5 times the cache_timeout will be purged, apart from the most recent $cache_allowed_file_count files.
+   *
+   * @var int
    */
-  public static $cache_chance_purge=100;
+  public static $cache_chance_purge = 100;
 
   /**
-   * @var integer Number of recent files allowed in the cache which the cache will not bother clearing during a deletion operation.
+   * Files allowed in cache.
+   *
+   * Number of recent files allowed in the cache which the cache will not bother clearing during a deletion operation.
    * They will be refreshed occasionally when requested anyway.
+   *
+   * @var int
    */
-  public static $cache_allowed_file_count=50;
+  public static $cache_allowed_file_count = 50;
 
   /**
-   * @var array A place to keep data and settings for Indicia code, to avoid using globals.
+   * A place to keep data and settings for Indicia code, to avoid using globals.
+   *
+   * @var array
    */
   public static $data = array();
 
@@ -507,6 +521,8 @@ class helper_base extends helper_config {
    * @todo Need to create a proper config option for this.
    * @todo Need to ensure this setting is utilised every where it should be.
    *
+   * @var string
+   *
    */
   public static $date_format = 'd/m/Y';
 
@@ -520,8 +536,10 @@ class helper_base extends helper_config {
   protected static $using_locking = FALSE;
 
   /**
-   * @var bool Are we linking in the default stylesheet? Handled sligtly different to the others so it can be added to the end of the
+   * Are we linking in the default stylesheet? Handled sligtly different to the others so it can be added to the end of the
    * list, allowing our CSS to override other stuff.
+   *
+   * @var bool
    */
   protected static $default_styles = FALSE;
 
@@ -556,6 +574,7 @@ class helper_base extends helper_config {
    * Utility function to insert a list of translated text items for use in JavaScript.
    *
    * @param string $group
+   *   Name given to the group of language strings for orgnisational purposes.
    * @param array $strings
    *   Associative array of keys and texts to translate.
    */
@@ -640,10 +659,9 @@ JS;
    *   * sref_handlers_4326
    *   * sref_handlers_osgb
    *   * sref_handlers_osie
-   * </ul>
    */
-  public static function add_resource($resource)
-  {
+  public static function add_resource($resource) {
+
     // Ensure indiciaFns is always the first resource added
     if (!self::$indiciaFnsDone) {
       self::$indiciaFnsDone = true;
@@ -810,17 +828,20 @@ JS;
    * Returns a span containing any validation errors active on the form for the
    * control with the supplied ID.
    *
-   * @param string $fieldname Fieldname of the control to retrieve errors for.
-   * @param boolean $plaintext Set to true to return just the error text, otherwise it is wrapped in a span.
+   * @param string $fieldname
+   *   Fieldname of the control to retrieve errors for.
+   * @param boolean $plaintext
+   *   Set to true to return just the error text, otherwise it is wrapped in a span.
+   *
    * @return string HTML for the validation error output.
    */
-  public static function check_errors($fieldname, $plaintext=false)
-  {
-    $error='';
-    if (self::$validation_errors!==null) {
+  public static function check_errors($fieldname, $plaintext=false) {
+    $error = '';
+    if (self::$validation_errors !== NULL) {
        if (array_key_exists($fieldname, self::$validation_errors)) {
          $errorKey = $fieldname;
-       } elseif (substr($fieldname, -4)=='date') {
+       }
+       elseif (substr($fieldname, -4) === 'date') {
           // For date fields, we also include the type, start and end validation problems
           if (array_key_exists($fieldname.'_start', self::$validation_errors)) {
             $errorKey = $fieldname.'_start';
@@ -838,13 +859,10 @@ JS;
          self::$displayed_errors[] = $error;
        }
     }
-    if ($error!='') {
-      if ($plaintext) {
-        return $error;
-      } else {
-        return self::apply_error_template($error, $fieldname);
-      }
-    } else {
+    if (!empty($error)) {
+      return $plaintext ? $error : self::apply_error_template($error, $fieldname);
+    }
+    else {
       return '';
     }
   }
@@ -1827,16 +1845,16 @@ if (typeof validator!=='undefined') {
   public static function apply_template($template, $options) {
     global $indicia_templates;
     // Don't need the extraParams - they are just for service communication.
-    $options['extraParams']=null;
+    $options['extraParams'] = NULL;
     // Set default validation error output mode
     if (!array_key_exists('validation_mode', $options)) {
-      $options['validation_mode']=self::$validation_mode;
+      $options['validation_mode'] = self::$validation_mode;
     }
     // Decide if the main control has an error. If so, highlight with the error class and set it's title.
     $error="";
-    if (self::$validation_errors!==null) {
+    if (self::$validation_errors !== NULL) {
       if (array_key_exists('fieldname', $options)) {
-        $error = self::check_errors($options['fieldname'], true);
+        $error = self::check_errors($options['fieldname'], TRUE);
       }
     }
     // Add a hint to the control if there is an error and this option is set, or a hint option
@@ -1885,7 +1903,7 @@ if (typeof validator!=='undefined') {
 
     // If options contain a help text, output it at the end if that is the preferred position
     $r = self::get_help_text($options, 'before');
-    //Add prefix
+    // Add prefix.
     $r .= self::apply_static_template('prefix', $options);
 
     // Add a label only if specified in the options array. Link the label to the inputId if available,
