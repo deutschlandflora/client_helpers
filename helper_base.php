@@ -85,19 +85,19 @@ $indicia_templates = array(
             ctrl.parents('.fieldset-wrapper').show();
           });
         }",
-  'image_upload' => '<input type="file" id="{id}" name="{fieldname}" accept="png|jpg|gif|jpeg|mp3|wav" {title}/>'."\n".
-      '<input type="hidden" id="{pathFieldName}" name="{pathFieldName}" value="{pathFieldValue}"/>'."\n",
-  'text_input' => '<input type="text" id="{id}" name="{fieldname}"{class} {disabled} {readonly} value="{default}" {title} {maxlength} />'."\n",
-  'hidden_text' => '<input type="hidden" id="{id}" name="{fieldname}" {disabled} value="{default}" />',
-  'password_input' => '<input type="password" id="{id}" name="{fieldname}"{class} {disabled} value="{default}" {title} />'."\n",
-  'textarea' => '<textarea id="{id}" name="{fieldname}"{class} {disabled} cols="{cols}" rows="{rows}" {title}>{default}</textarea>'."\n",
-  'checkbox' => '<input type="hidden" name="{fieldname}" value="0"/><input type="checkbox" id="{id}" name="{fieldname}" value="1"{class}{checked}{disabled} {title} />'."\n",
-  'training' => '<input type="hidden" name="{fieldname}" value="{hiddenValue}"/><input type="checkbox" id="{id}" name="{fieldname}" value="1"{class}{checked}{disabled} {title} />'."\n",
-  'date_picker' => '<input type="text" placeholder="{placeholder}" size="30"{class} id="{id}" name="{fieldname}" value="{default}" {title}/>'."\n",
-  'select' => '<select id="{id}" name="{fieldname}"{class} {disabled} {title}>{items}</select>',
+  'image_upload' => '<input type="file" id="{id}" name="{fieldname}" accept="png|jpg|gif|jpeg|mp3|wav" {title}/>' . "\n" .
+      '<input type="hidden" id="{pathFieldName}" name="{pathFieldName}" value="{pathFieldValue}"/>' . "\n",
+  'text_input' => '<input type="text" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" {title} {maxlength} />'."\n",
+  'hidden_text' => '<input type="hidden" id="{id}" name="{fieldname}" {class} {attributes} value="{default}" />',
+  'password_input' => '<input type="password" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" {title} />'."\n",
+  'textarea' => '<textarea id="{id}" name="{fieldname}"{class} {attributes} cols="{cols}" rows="{rows}" {title}>{default}</textarea>'."\n",
+  'checkbox' => '<input type="hidden" name="{fieldname}" value="0"/><input type="checkbox" id="{id}" name="{fieldname}"{class} {attributes} value="1"{checked} {title} />'."\n",
+  'training' => '<input type="hidden" name="{fieldname}" value="{hiddenValue}"/><input type="checkbox" id="{id}" name="{fieldname}" {class} {attributes} value="1"{checked} {title} />'."\n",
+  'date_picker' => '<input type="text" id="{id}" name="{fieldname}"{class} {attributes} placeholder="{placeholder}" size="30" value="{default}" {title}/>'."\n",
+  'select' => '<select id="{id}" name="{fieldname}"{class} {attributes} {title}>{items}</select>',
   'select_item' => '<option value="{value}" {selected} >{caption}</option>',
   'select_species' => '<option value="{value}" {selected} >{caption} - {common}</option>',
-  'listbox' => '<select id="{id}" name="{fieldname}"{class} {disabled} size="{size}" multiple="{multiple}" {title}>{items}</select>',
+  'listbox' => '<select id="{id}" name="{fieldname}"{class} {attributes} size="{size}" multiple="{multiple}" {title}>{items}</select>',
   'listbox_item' => '<option value="{value}"{selected} >{caption}</option>',
   'list_in_template' => '<ul{class} {title}>{items}</ul>',
   'check_or_radio_group' => '<ul {class} id="{id}">{items}</ul>',
@@ -1869,6 +1869,7 @@ if (typeof validator!=='undefined') {
       'class' => '',
       'disabled' => '',
       'readonly' => '',
+      'attributes' => '',
     ), $options);
     if (array_key_exists('maxlength', $options)) {
       $options['maxlength']='maxlength="'.$options['maxlength'].'"';
@@ -1888,12 +1889,8 @@ if (typeof validator!=='undefined') {
     if (isset($options['isFormControl']) && isset($indicia_templates['formControlClass'])) {
       $options['class'] .= " $indicia_templates[formControlClass]";
     }
-    // add validation metadata to the control if specified, as long as control has a fieldname
-    if (array_key_exists('fieldname', $options)) {
-      $validationClasses = self::build_validation_class($options);
-      $options['class'] .= " $validationClasses";
-    }
-
+    // Add validation metadata to the control if specified, as long as control has a fieldname.
+    $options['attributes'] = self::buildElementAttributes($options);
     // replace html attributes with their wrapped versions, e.g. a class becomes class="..."
     foreach (self::$html_attributes as $name => $attr) {
       if (!empty($options[$name])) {
@@ -1942,7 +1939,7 @@ if (typeof validator!=='undefined') {
         self::add_resource('indicia_locks');
       }
     }
-    if (isset($validationClasses) && !empty($validationClasses) && strpos($validationClasses, 'required')!==false) {
+    if (strpos($options['attributes'], 'required') !== FALSE) {
       $addons .= self::apply_static_template('requiredsuffix', $options);
     }
     // Add an error icon to the control if there is an error and this option is set
@@ -2095,13 +2092,22 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
   }
 
  /**
-   * Converts the validation rules in an options array into a string that can be used as the control class,
-   * to trigger the jQuery validation plugin.
-   * @param $options. Control options array. For validation to be applied should contain a validation entry,
-   * containing a single validation string or an array of strings.
-   * @return string The validation rules formatted as a class.
-   */
-  protected static function build_validation_class($options) {
+  *  Creates attributes to be added to an output control's element.
+  *
+  * Converts the validation rules in an options array into attributes which
+  * define the rules for the jQuery validation plugin. Also adds the disabled
+  * and readonly attributes where indicated in the options.
+  *
+  * @param $options
+  *   Control options array. For validation to be applied should contain a
+  *   validation entry, containing a single validation string or an array of
+  *   strings.
+  *
+  * @return string
+  *   The validation rules and other attributes which should be added to the
+  *   control's output HTML.
+  */
+  protected static function buildElementAttributes($options) {
     global $custom_terms;
     $rules = (array_key_exists('validation', $options) ? $options['validation'] : array());
     if (!is_array($rules)) $rules = array($rules);
@@ -2115,7 +2121,14 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
           lang::get($options['fieldname']));
     }
     // Convert these rules into jQuery format.
-    return self::convert_to_jquery_val_metadata($rules, $options);
+    $attrs = self::convertToJqueryValMetadata($rules, $options);
+    if ($options['disabled']) {
+      $attrs[] = 'disabled';
+    }
+    if ($options['readonly']) {
+      $attrs[] = 'disabled';
+    }
+    return implode(' ', $attrs);
   }
 
   /**
@@ -2160,48 +2173,48 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
   * plugin metadata format.
   * @param array $rules List of validation rules to be converted.
   * @param array $options Options passed to the validated control.
-  * @return string Validation metadata classes to add to the input element.
+  *
+  * @return string
+  *   Text for the attributes and values to add to the element.
+  *
   * @todo Implement a more complete list of validation rules.
   */
-  protected static function convert_to_jquery_val_metadata($rules, $options) {
-    $converted = array();
+  protected static function convertToJqueryValMetadata($rules, $options) {
+    $converted = [];
     foreach ($rules as $rule) {
       // Detect the rules that can simply be passed through
       $rule = trim($rule);
-      if    ($rule=='required'
-          || $rule=='dateISO'
-          || $rule=='email'
-          || $rule=='url'
-          || $rule=='time'
-          || $rule=='integer') {
-        $converted[] = $rule.':true';
+      $simpleRules = [
+        'required',
+        'dateISO',
+        'email',
+        'url',
+        'time',
+        'integer',
+        'digit',
+        'numeric'
+      ];
+      if (in_array($rule, $simpleRules)) {
+        $converted[] = $rule;
       // Now any rules which need parsing or conversion
       } elseif ($rule=='date' && !isset($options['allowVagueDates']) ||
             (isset($options['allowVagueDates']) && $options['allowVagueDates']===false)) {
-        $converted[] = 'customDate:true';
-      } elseif ($rule=='digit') {
-        $converted[] = 'digits:true';
-      } elseif ($rule=='numeric') {
-        $converted[] = 'number:true';
+        $converted[] = 'customDate';
       // the next test uses a regexp named expression to find the digit in a maximum rule (maximum[10])
       } elseif (preg_match('/maximum\[(?P<val>-?\d+)\]/', $rule, $matches)) {
-        $converted[] = 'max:'.$matches['val'];
+        $converted[] = "max=\"$matches[val]\"";
       // and again for minimum rules
       } elseif (preg_match('/minimum\[(?P<val>-?\d+)\]/', $rule, $matches)) {
-        $converted[] = 'min:'.$matches['val'];
+        $converted[] = "min=\"$matches[val]\"";
       } elseif (preg_match('/regex\[(?P<val>.+)\]/', $rule, $matches)) {
-        $converted[] = 'pattern:'. $matches['val'];
+        $converted[] = "pattern=\"$matches[val]\"";
       } elseif (preg_match('/mingridref\[(?P<val>-?\d+)\]/', $rule, $matches)) {
-        $converted[] = 'mingridref:'.$matches['val'];
+        $converted[] = "mingridref=\"$matches[val]\"";
       } elseif (preg_match('/maxgridref\[(?P<val>-?\d+)\]/', $rule, $matches)) {
-        $converted[] = 'maxgridref:'.$matches['val'];
+        $converted[] = "maxgridref=\"$matches[val]\"";
       }
     }
-    if (count($converted) == 0) {
-      return '';
-    } else {
-      return '{'. implode(', ', $converted) .'}';
-    }
+    return $converted;
   }
 
  /**

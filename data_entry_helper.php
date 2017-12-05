@@ -5795,10 +5795,10 @@ $('div#$escaped_divId').indiciaTreeBrowser({
     $options['class'] = trim($options['class'] . ' control-box');
     // We want to apply validation to the inner items, not the outer control
     if (array_key_exists('validation', $options)) {
-      $itemClass = self::build_validation_class($options);
+      $attributes = self::buildValidationAttributes($options);
       unset($options['validation']);
     } else {
-      $itemClass='';
+      $attributes = '';
     }
     $lookupItems = self::get_list_items_from_options($options, 'checked');
     $items = "";
@@ -5811,11 +5811,12 @@ $('div#$escaped_divId').indiciaTreeBrowser({
           'disabled' => isset($options['disabled']) ? $options['disabled'] : '',
           'type' => $type,
           'value' => $value,
-          'class' => $itemClass . (($idx == 0) ? ' first-item' : ''),
-          'itemId' => $options['id'].':'.$idx
+          'class' => (($idx == 0) ? 'first-item' : ''),
+          'itemId' => "$options[id]:$idx",
+          'attributes' => $attributes
         )
       );
-      $item['fieldname']=$fieldName;
+      $item['fieldname'] = $fieldName;
       $items .= self::mergeParamsIntoTemplate($item, $template, true, true);
       $idx++;
       if (!empty($options['otherItemId']) && $value==$options['otherItemId'])
