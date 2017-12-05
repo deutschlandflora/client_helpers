@@ -480,6 +480,8 @@ $('#$escaped').change(function(e) {
    * <li><b>captionField</b><br/>
    * Required if addToTable is false. Field to draw values from to show in the control from.
    * If addToTable is true, this setting will be ignored and 'caption' will always be used.</li>
+   * <li><b>valueField</b><br/>
+   * Field to obtain the value to store for each item from.</li>
    * <li><b>extraParams</b><br/>
    * Required. Associative array of items to pass via the query string to the service. This
    * should at least contain the read authorisation array.</li>
@@ -610,6 +612,7 @@ $('#$escaped').change(function(e) {
     self::$javascript .= <<<JS
 indiciaFns.initSubList('$options[escaped_id]', '$options[escaped_captionField]',
   '$options[fieldname]', '$indicia_templates[sub_list_item]');
+
 JS;
     // load any default values for list items into display and hidden lists
     $items = "";
@@ -5624,7 +5627,7 @@ $('div#$escaped_divId').indiciaTreeBrowser({
    */
   private static function get_list_items_from_options($options, $selectedItemAttribute) {
     global $indicia_templates;
-    if (empty($options['lookupValues']) && empty($options['report']) && empty($options['table'])) {
+    if (!isset($options['lookupValues']) && empty($options['report']) && empty($options['table'])) {
       $name = empty($options['id']) ? $options['fieldname'] : $options['id'];
       throw new exception("Control $name needs a method of obtaining a list of options.");
     }
