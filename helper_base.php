@@ -88,7 +88,7 @@ $indicia_templates = array(
   'image_upload' => '<input type="file" id="{id}" name="{fieldname}" accept="png|jpg|gif|jpeg|mp3|wav" {title}/>' . "\n" .
       '<input type="hidden" id="{pathFieldName}" name="{pathFieldName}" value="{pathFieldValue}"/>' . "\n",
   'text_input' => '<input type="text" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" {title} {maxlength} />'."\n",
-  'hidden_text' => '<input type="hidden" id="{id}" name="{fieldname}" {class} {attributes} value="{default}" />',
+  'hidden_text' => '<input type="hidden" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" />',
   'password_input' => '<input type="password" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" {title} />'."\n",
   'textarea' => '<textarea id="{id}" name="{fieldname}"{class} {attributes} cols="{cols}" rows="{rows}" {title}>{default}</textarea>'."\n",
   'checkbox' => '<input type="hidden" name="{fieldname}" value="0"/><input type="checkbox" id="{id}" name="{fieldname}"{class} {attributes} value="1"{checked} {title} />'."\n",
@@ -1897,7 +1897,6 @@ if (typeof validator!=='undefined') {
         $options[$name]=' '.$attr.'="'.$options[$name].'"';
       }
     }
-
     // If options contain a help text, output it at the end if that is the preferred position
     $r = self::get_help_text($options, 'before');
     // Add prefix.
@@ -2126,7 +2125,7 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
       $attrs[] = 'disabled';
     }
     if ($options['readonly']) {
-      $attrs[] = 'disabled';
+      $attrs[] = 'readonly';
     }
     return implode(' ', $attrs);
   }
