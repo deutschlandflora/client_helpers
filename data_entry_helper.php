@@ -275,6 +275,7 @@ class data_entry_helper extends helper_base {
    *     * datatype - The column's data type. Currently only text and lookup is supported.
    *     * termlist_id - If datatype=lookup, then provide the termlist_id of the list to load terms for as options in the
    *       control.
+   *     * lookupValues - if using a lookup, provide an associative array as an alternative to a termlist_id.
    *     * unit - An optional unit label to display after the control (e.g. 'cm', 'kg').
    *     * regex - A regular expression which validates the controls input value.
    *     * default - default value for this control used for new rows
