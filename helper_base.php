@@ -2110,7 +2110,7 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
     global $custom_terms;
     $rules = (array_key_exists('validation', $options) ? $options['validation'] : array());
     if (!is_array($rules)) $rules = array($rules);
-    if (array_key_exists($options['fieldname'], self::$default_validation_rules)) {
+    if (!empty($options['fieldname']) && array_key_exists($options['fieldname'], self::$default_validation_rules)) {
       $rules = array_merge($rules, self::$default_validation_rules[$options['fieldname']]);
     }
     // Build internationalised validation messages for jQuery to use, if the fields have internationalisation strings specified
