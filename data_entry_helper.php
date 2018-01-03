@@ -885,18 +885,6 @@ JS;
     $escaped_id=str_replace(':','\\\\:',$options['id']);
     // Don't set js up for the datepicker in the clonable row for the species checklist grid
     if ($escaped_id!='{fieldname}') {
-      // should include even if validated_form_id is null, as could be doing this via AJAX.
-      if (!$options['allowVagueDates']) {
-        self::$javascript .= "if (typeof jQuery.validator !== \"undefined\") {
-  jQuery.validator.addMethod('customDate',
-    function(value, element) {
-      // parseDate throws exception if the value is invalid
-      try{jQuery.datepicker.parseDate( '".$options['dateFormat']."', value);return true;}
-      catch(e){return false;}
-    }, '".lang::get('Please enter a valid date') . "'
-  );
-}\n";
-      }
       if ($options['showButton']) {
         $imgPath = empty(self::$images_path) ? self::relative_client_helper_path() . "../media/images/" : self::$images_path;
         $imgPath .= 'nuvola/date-16px.png';
@@ -908,7 +896,8 @@ JS;
         $button = ",\n    showOn: 'button',\n    buttonImage: '$imgPath',\n    buttonText: '$buttonText'";
       } else
         $button='';
-      self::$javascript .= "jQuery('#$escaped_id').datepicker({
+      self::$javascript .= "indiciaData.dateFormat = '$options[dateFormat]';
+  $('#$escaped_id').datepicker({
     dateFormat : '".$options['dateFormat']."',
     changeMonth: true,
     changeYear: true,

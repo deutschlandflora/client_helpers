@@ -752,7 +752,14 @@ JS;
             self::$css_path . "theme-generic.css"
           )
         ),
-        'validation' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path.'jquery.metadata.js', self::$js_path.'jquery.validate.js', self::$js_path.'additional-methods.js')),
+        'validation' => array(
+          'deps' => array('jquery'),
+          'javascript' => array(
+            self::$js_path.'jquery.validate.min.js',
+            self::$js_path.'additional-methods.min.js',
+            self::$js_path.'indicia.additional-methods.js'
+          )
+        ),
         'plupload' => array('deps' => array('jquery_ui','fancybox'), 'javascript' => array(
             self::$js_path.'jquery.uploader.js', self::$js_path.'plupload/js/plupload.full.min.js')),
         'jqplot' => array('stylesheets' => array(self::$js_path.'jqplot/jquery.jqplot.min.css'), 'javascript' => array(
@@ -1756,6 +1763,12 @@ JS;
       global $indicia_templates;
       self::$javascript .= "
 indiciaData.controlWrapErrorClass = '$indicia_templates[controlWrapErrorClass]';
+// Trim data before validation.
+$('#".self::$validated_form_id."').submit(function() {
+  $.each($(this).find('input,textarea'), function() {
+    $(this).val($(this).val().trim());
+  });
+});
 var validator = $('#".self::$validated_form_id."').validate({
   ignore: \":hidden,.inactive\",
   errorClass: \"$indicia_templates[error_class]\",
@@ -2195,11 +2208,10 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
         'numeric'
       ];
       if (in_array($rule, $simpleRules)) {
-        $converted[] = $rule;
+        $converted[] = "data-rule-$rule=\"true\"";
       // Now any rules which need parsing or conversion
-      } elseif ($rule=='date' && !isset($options['allowVagueDates']) ||
-            (isset($options['allowVagueDates']) && $options['allowVagueDates']===false)) {
-        $converted[] = 'customDate';
+      } elseif ($rule=='date' && empty($options['allowVagueDates'])) {
+        $converted[] = 'data-rule-customDate=\"true\"';
       // the next test uses a regexp named expression to find the digit in a maximum rule (maximum[10])
       } elseif (preg_match('/maximum\[(?P<val>-?\d+)\]/', $rule, $matches)) {
         $converted[] = "max=\"$matches[val]\"";
