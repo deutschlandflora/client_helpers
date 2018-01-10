@@ -128,15 +128,13 @@ $indicia_templates = array(
   'tree_browser_node' => '<span>{caption}</span>',
   'autocomplete' => '<input type="hidden" class="hidden" id="{id}" name="{fieldname}" value="{default}" />' .
       '<input id="{inputId}" name="{inputId}" type="text" value="{defaultCaption}" {class} {disabled} {title}/>' . "\n",
-  'autocomplete_javascript' => "jQuery('input#{escaped_input_id}').autocomplete('{url}',
-      {
-        extraParams : {
-          orderby : '{captionField}',
-          mode : 'json',
-          qfield : '{captionField}',
-          {sParams}
-        },
-        simplify: {simplify},
+  'autocomplete_javascript' => "jQuery('input#{escaped_input_id}').indiciaAutocomplete({
+    baseUrl: '{url}',
+    extraParams: {extraParams},
+    captionField: '{captionField}'
+  });
+  /*    {
+
         selectMode: {selectMode},
         warnIfNoMatch: {warnIfNoMatch},
         continueOnBlur: {continueOnBlur},
@@ -168,7 +166,7 @@ $indicia_templates = array(
         $('input#{escaped_input_id}').after(data.icon).next().hover(indiciaFns.hoverIdDiffIcon);
       }
       $('input#{escaped_id}').trigger('change', data);
-    });\r\n",
+    });*/\r\n",
   'sub_list' => '<div id="{id}:box" class="control-box wide"><div>'."\n".
     '<div>'."\n".
     '{panel_control} <input id="{id}:add" type="button" value="'.lang::get('add').'" />'."\n".
@@ -727,7 +725,10 @@ JS;
         'postcode_search' => array('javascript' => array(self::$js_path."postcode_search.js")),
         'locationFinder' => array('deps' =>array('indiciaMapEdit'), 'javascript' => array(self::$js_path."jquery.indiciaMap.edit.locationFinder.js")),
         'createPersonalSites' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path."createPersonalSites.js")),
-        'autocomplete' => array('deps' => array('jquery', 'jquery_ui')),// 'stylesheets' => array(self::$css_path."jquery.autocomplete.css"), 'javascript' => array(self::$js_path."jquery.autocomplete.js")),
+        'autocomplete' => array(
+          'deps' => array('jquery', 'jquery_ui'),
+          'javascript' => array(self::$js_path."indicia.widgets.js")
+        ),// 'stylesheets' => array(self::$css_path."jquery.autocomplete.css"), 'javascript' => array(self::$js_path."jquery.autocomplete.js")),
         'indicia_locks' => array('deps' =>array('jquery_cookie', 'json'), 'javascript' => array(self::$js_path."indicia.locks.js")),
         'jquery_cookie' => array('deps' =>array('jquery'), 'javascript' => array(self::$js_path."jquery.cookie.js")),
         'jquery_ui' => array(

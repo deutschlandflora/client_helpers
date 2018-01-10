@@ -153,8 +153,6 @@ class data_entry_helper extends helper_base {
    *   * numValues - Optional. Number of returned values in the drop down list. Defaults to 20.
    *   * duplicateCheckFields - Optional. Provide an array of field names from the dataset returned from the warehouse.
    *     Any duplicate values from this list of fields will not be added to the output.
-   *   * simplify - Set to true to simplify the search term by removing punctuation and spaces. Use when the field
-   *     being searched against is also simplified. Deprecated, use taxa_search service instead.
    *   * warnIfNoMatch - Should the autocomplete control warn the user if they leave the control whilst searching
    *     and then nothing is matched? Default true.
    *   * continueOnBlur - Should the autocomplete control continue trying to load values when the user blurs out of the
@@ -210,18 +208,18 @@ class data_entry_helper extends helper_base {
       'escaped_id' => self::jq_esc($options['id']),
       'max' => array_key_exists('numValues', $options) ? ', max : ' . $options['numValues'] : '',
       'formatFunction' => 'function(item) { return item.{captionField}; }',
-      'simplify' => (isset($options['simplify']) && $options['simplify']) ? 'true' : 'false',
       'warnIfNoMatch' => TRUE,
       'continueOnBlur' => TRUE,
       'selectMode' => FALSE,
       'default' => '',
       'matchContains' => FALSE,
-      'isFormControl' => TRUE
+      'isFormControl' => TRUE,
     ), $options);
     if (isset($options['report'])) {
       $options['extraParams']['report'] = $options['report'] . '.xml';
       $options['extraParams']['reportSource'] = 'local';
     }
+    $options['extraParams'] = json_encode($options['extraParams']);
     $options['warnIfNoMatch'] = $options['warnIfNoMatch'] ? 'true' : 'false';
     $options['continueOnBlur'] = $options['continueOnBlur'] ? 'true' : 'false';
     $options['selectMode'] = $options['selectMode'] ? 'true' : 'false';
@@ -229,16 +227,6 @@ class data_entry_helper extends helper_base {
     self::add_resource('autocomplete');
     // Escape the id for jQuery selectors.
     $escaped_id = self::jq_esc($options['id']);
-    // Do stuff with extraParams.
-    $sParams = '';
-    foreach ($options['extraParams'] as $a => $b) {
-      // Escape single quotes.
-      $b = str_replace("'", "\'", $b);
-      $sParams .= "$a : '$b',";
-    }
-    // Lop the comma off the end.
-    $options['sParams'] = substr($sParams, 0, -1);
-    $options['extraParams'] = NULL;
     if (!empty($options['duplicateCheckFields'])) {
       $duplicateCheckFields = 'item.' . implode(" + '#' + item.", $options['duplicateCheckFields']);
       $options['duplicateCheck'] = "$.inArray($duplicateCheckFields, done)===-1";
