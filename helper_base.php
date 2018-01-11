@@ -128,10 +128,12 @@ $indicia_templates = array(
   'tree_browser_node' => '<span>{caption}</span>',
   'autocomplete' => '<input type="hidden" class="hidden" id="{id}" name="{fieldname}" value="{default}" />' .
       '<input id="{inputId}" name="{inputId}" type="text" value="{defaultCaption}" {class} {disabled} {title}/>' . "\n",
-  'autocomplete_javascript' => "jQuery('input#{escaped_input_id}').indiciaAutocomplete({
+  'autocomplete_javascript' => "$('input#{escaped_input_id}').indiciaAutocomplete({
+    id: '{id}',
     baseUrl: '{url}',
     extraParams: {extraParams},
-    captionField: '{captionField}'
+    captionField: '{captionField}',
+    valueField: '{valueField}'
   });
   /*    {
 
