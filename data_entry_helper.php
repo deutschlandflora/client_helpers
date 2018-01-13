@@ -2710,8 +2710,18 @@ JS;
       'valueField' => 'taxa_taxon_list_id',
       'formatFunction'=>empty($indicia_templates['format_species_autocomplete_fn']) ? $indicia_templates['taxon_label'] : $indicia_templates['format_species_autocomplete_fn'],
       'outputPreferredNameToSelector' => false,
-      'duplicateCheckFields' => array('taxon', 'taxa_taxon_list_id')
+      'duplicateCheckFields' => array('taxon', 'taxa_taxon_list_id'),
+      'speciesMode' => TRUE,
+      'speciesIncludeAuthorities' => TRUE, // FALSE,
+      'speciesIncludeBothNames' => FALSE,
+      'speciesIncludeTaxonGroup' => FALSE,
+      'speciesIncludeIdDiff' => TRUE
     ), $options);
+    $options['speciesMode'] = $options['speciesMode'] ? 'true' : 'false';
+    $options['speciesIncludeBothNames'] = $options['speciesIncludeBothNames'] ? 'true' : 'false';
+    $options['speciesIncludeAuthorities'] = $options['speciesIncludeAuthorities'] ? 'true' : 'false';
+    $options['speciesIncludeTaxonGroup'] = $options['speciesIncludeTaxonGroup'] ? 'true' : 'false';
+    echo $options['formatFunction'];
     $options['extraParams'] += self::getSpeciesNamesFilter($options);
     if (!empty($options['default']) && empty($options['defaultCaption'])) {
       // Which field will be used to lookup the default caption?
