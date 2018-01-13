@@ -135,10 +135,8 @@ $indicia_templates = array(
     valueField: '{valueField}',
     default: '{default}',
     defaultCaption: '{defaultCaption}',
-    speciesMode: {speciesMode},
-    speciesIncludeBothNames: {speciesIncludeBothNames},
-    speciesIncludeAuthorities: {speciesIncludeAuthorities},
-    speciesIncludeTaxonGroup: {speciesIncludeTaxonGroup},
+    mode: '{mode}',
+    formatOptions: {formatOptions}
   });
   /*    {
 

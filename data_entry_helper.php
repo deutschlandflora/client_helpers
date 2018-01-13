@@ -2699,29 +2699,26 @@ JS;
     $options = array_merge(array(
       'selectMode' => false
     ), $options);
-    if (empty($indicia_templates['format_species_autocomplete_fn'])) {
-      self::build_species_autocomplete_item_function($options);
-    }
     $options = array_merge(array(
       'fieldname' => 'occurrence:taxa_taxon_list_id',
       'table' => 'taxa_search',
       'captionField' => 'searchterm',
       'captionFieldInEntity' => 'taxon',
       'valueField' => 'taxa_taxon_list_id',
-      'formatFunction'=>empty($indicia_templates['format_species_autocomplete_fn']) ? $indicia_templates['taxon_label'] : $indicia_templates['format_species_autocomplete_fn'],
-      'outputPreferredNameToSelector' => false,
+      'outputPreferredNameToSelector' => FALSE,
       'duplicateCheckFields' => array('taxon', 'taxa_taxon_list_id'),
-      'speciesMode' => TRUE,
-      'speciesIncludeAuthorities' => TRUE, // FALSE,
+      'mode' => 'species',
       'speciesIncludeBothNames' => FALSE,
+      'speciesIncludeAuthorities' => FALSE,
       'speciesIncludeTaxonGroup' => FALSE,
       'speciesIncludeIdDiff' => TRUE
     ), $options);
-    $options['speciesMode'] = $options['speciesMode'] ? 'true' : 'false';
-    $options['speciesIncludeBothNames'] = $options['speciesIncludeBothNames'] ? 'true' : 'false';
-    $options['speciesIncludeAuthorities'] = $options['speciesIncludeAuthorities'] ? 'true' : 'false';
-    $options['speciesIncludeTaxonGroup'] = $options['speciesIncludeTaxonGroup'] ? 'true' : 'false';
-    echo $options['formatFunction'];
+    $options['formatOptions'] = json_encode([
+      'speciesIncludeBothNames' => $options['speciesIncludeBothNames'],
+      'speciesIncludeAuthorities' => $options['speciesIncludeAuthorities'],
+      'speciesIncludeTaxonGroup' => $options['speciesIncludeTaxonGroup'],
+      'speciesIncludeIdDiff' => $options['speciesIncludeIdDiff']
+    ]);
     $options['extraParams'] += self::getSpeciesNamesFilter($options);
     if (!empty($options['default']) && empty($options['defaultCaption'])) {
       // Which field will be used to lookup the default caption?
@@ -2742,95 +2739,6 @@ JS;
       });\n";
     }
     return self::autocomplete($options);
-  }
-
-  /**
-   * Builds a JavaScript function to format the species shown in the species autocomplete.
-   *
-   * @param array $options Options array with the following entries:
-   * * **speciesIncludeAuthorities** - include author strings in species names. Default false.
-   * * **speciesIncludeBothNames** - include both latin and common names. Default false.
-   * * **speciesIncludeTaxonGroup** - include the taxon group for each shown name. Default false.
-   * * **speciesIncludeIdDiff** - include identification difficulty icons. Default true.
-   */
-  public static function build_species_autocomplete_item_function($options) {
-    global $indicia_templates;
-    $options = array_merge(array(
-      'speciesIncludeAuthorities' => FALSE,
-      'speciesIncludeBothNames' => FALSE,
-      'speciesIncludeTaxonGroup' => FALSE,
-      'speciesIncludeIdDiff' => TRUE
-    ), $options);
-    // Need bools as strings
-    $options['speciesIncludeAuthorities'] =
-      $options['speciesIncludeAuthorities'] ? 'true' : 'false';
-    $options['speciesIncludeBothNames'] =
-      $options['speciesIncludeBothNames'] ? 'true' : 'false';
-    $options['speciesIncludeTaxonGroup'] =
-      $options['speciesIncludeTaxonGroup'] ? 'true' : 'false';
-    $options['speciesIncludeIdDiff'] =
-      $options['speciesIncludeIdDiff'] ? 'true' : 'false';
-    $fn = <<<JS
-function(item) {
-  var r;
-  var synText;
-  var nameTest;
-  var speciesIncludeAuthorities = $options[speciesIncludeAuthorities];
-  var speciesIncludeBothNames = $options[speciesIncludeBothNames];
-  var speciesIncludeTaxonGroup = $options[speciesIncludeTaxonGroup];
-  var speciesIncludeIdDiff = $options[speciesIncludeIdDiff];
-
-  if (item.language_iso!==null && item.language_iso.toLowerCase() === 'lat') {
-    r = '<em>' + item.taxon + '</em>';
-  } else {
-    r = '<span>' + item.taxon + '</span>';
-  }
-  if (speciesIncludeAuthorities) {
-    if (item.authority) {
-      r += ' ' + item.authority;
-    }
-  }
-  // This bit optionally adds '- common' or '- latin' depending on what was being searched
-  if (speciesIncludeBothNames) {
-    nameTest = (speciesIncludeAuthorities &&
-      (item.preferred_taxon !== item.taxon || item.preferred_authority !==item.authority))
-      || (!speciesIncludeAuthorities &&
-      item.preferred_taxon !== item.taxon)
-
-    if (item.preferred === 't' && item.default_common_name !== item.taxon && item.default_common_name) {
-      r += '<br/>' + item.default_common_name;
-    } else if (item.preferred==='f' && nameTest && item.preferred_taxon) {
-      synText = item.language_iso==='lat' ? 'syn. of' : '';
-      r += '<br/>[';
-      if (item.language_iso==='lat') {
-        r += 'syn. of ';
-      }
-      r += '<em>' + item.preferred_taxon+ '</em>';
-      if (speciesIncludeAuthorities) {
-        if (item.preferred_authority) {
-          r += ' ' + item.preferred_authority;
-        }
-      }
-      r += ']';
-    }
-  }
-  if (speciesIncludeTaxonGroup) {
-    r += '<br/><strong>' + item.taxon_group + '</strong>';
-  }
-  if (speciesIncludeIdDiff &&
-      item.identification_difficulty && item.identification_difficulty>1) {
-    item.icon = ' <span ' +
-        'class="item-icon id-diff id-diff-' + item.identification_difficulty + '" ' +
-        'data-diff="' + item.identification_difficulty + '" ' +
-        'data-rule="' + item.id_diff_verification_rule_id + '"></span>';
-    r += item.icon;
-  }
-  return r;
-}
-
-JS;
-    // Set it into the indicia templates
-    $indicia_templates['format_species_autocomplete_fn'] = $fn;
   }
 
   /**
@@ -2895,15 +2803,6 @@ RIJS;
   * variable to set the value for the entry 'taxon_label'. The tags available in
   * the template are {taxon}, {preferred_taxon}, {authority} and {default_common_name}. This
   * can be a PHP snippet if PHPtaxonLabel is set to true.</p>
-  *
-  * <p>To change the format of the label displayed for each taxon in the
-  * autocomplete used for searching for species to add to the grid, use the
-  * global $indicia_templates variable to set the value for the entry
-  * 'format_species_autocomplete_fn'. This must be a JavaScript function which
-  * takes a single parameter. The parameter is the item returned from the
-  * database with attributes taxon, preferred ('t' or 'f'), preferred_taxon,
-  * default_common_name, authority, taxon_group, language. The function must return the
-  * string to display in the autocomplete list.</p>
   *
   * <p>To perform an action on the event of a new row being added to the grid,
   * write a JavaScript function taking arguments (data, row) and add to the
@@ -3085,11 +2984,8 @@ RIJS;
   * <li><b>taxon_label_cell</b></br>
   * Generates the label shown for the taxon name for each added row.
   * </li>
-  * <li><b>format_species_autocomplete_fn</b></br>
-  * Can be set to an optional JavaScript function which formats the contents of the species
-  * autocomplete's search list items.
-  * </li>
   * <li><b>taxon_label</b></br>
+    @todo Remove this
   * If format_species_autocomplete_fn is not set, then this provides an HTML template for the
   * contents of the species autocomplete's search list items.
   * </li>
