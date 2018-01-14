@@ -214,6 +214,7 @@ class data_entry_helper extends helper_base {
       'default' => '',
       'matchContains' => FALSE,
       'isFormControl' => TRUE,
+      'formatOptions' => '{}',
     ), $options);
     if (isset($options['report'])) {
       $options['extraParams']['report'] = $options['report'] . '.xml';
@@ -3553,11 +3554,6 @@ JS;
       // selecting the species from this list. Add the required controls for this.
       if (!empty($options['lookupListId'])) {
         // Javascript to add further rows to the grid
-        if (isset($indicia_templates['format_species_autocomplete_fn'])) {
-          self::$javascript .= 'formatter = '.$indicia_templates['format_species_autocomplete_fn'];
-        } else {
-          self::$javascript .= "formatter = '".$indicia_templates['taxon_label']."';\n";
-        }
         if (!empty(parent::$warehouse_proxy))
           $url = parent::$warehouse_proxy."index.php/services/data";
         else
