@@ -1532,7 +1532,7 @@ JS;
   $optionsHtml
 </select>
 <input type="submit" value="Filter" class="run-filter $indicia_templates[buttonDefaultClass]"/>
-<button class="clear-filter" style="display: none">Clear</button>
+<button class="clear-filter $indicia_templates[buttonDefaultClass]" style="display: none">Clear</button>
 </form>
 HTML;
     return $r;
