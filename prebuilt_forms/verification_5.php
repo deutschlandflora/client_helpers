@@ -252,7 +252,7 @@ class iform_verification_5 {
           'type' => 'textarea',
           'default' => 'We would appreciate your opinion on the following record. Please reply to this mail with "accepted", "not accepted" or "query" '.
               'in the email body, followed by any comments you have including the proposed re-identification if relevant on the next line.'.
-              "\n\n%record%",
+              "\n\n%record%\n\n%warehouseRecordCommentPageLink%",
           'group' => 'Verifier emails'
         ), array(
           'name' => 'email_subject_send_to_recorder',
@@ -393,6 +393,22 @@ class iform_verification_5 {
           'type' => 'boolean',
           'group' => 'Notification Settings',
           'default' => FALSE,
+          'required' => 'false'
+        ),
+        array(
+          'name' => 'warehouse_record_comment_page_link_label',
+          'caption' => 'Warehouse record comment page link label',
+          'description' => 'Label for the link to the Warehouse record comment page.',
+          'type' => 'text_input',
+          'group' => 'Warehouse record comment page link',
+          'required' => 'false'
+        ),
+        array(
+          'name' => 'warehouse_record_comment_page_link_url',
+          'caption' => 'Warehouse record comment page link URL',
+          'description' => 'URL link to the Warehouse record comment page.',
+          'type' => 'text_input',
+          'group' => 'Warehouse record comment page link',
           'required' => 'false'
         )
       )
@@ -814,6 +830,10 @@ HTML
           )
         )
       ));
+    if (!empty($args['warehouse_record_comment_page_link_label']) && !empty($args['warehouse_record_comment_page_link_url'])) {
+      data_entry_helper::$javascript .= 'indiciaData.warehouseRecordCommentPageLinkLabel = "' . $args['warehouse_record_comment_page_link_label'] . "\";\n";
+      data_entry_helper::$javascript .= 'indiciaData.warehouseRecordCommentPageLinkURL = "' . $args['warehouse_record_comment_page_link_url'] . "\";\n";
+    }
     $r = str_replace(array('{grid}', '{log}', '{paramsForm}'), array($grid, $log, $params),
         self::getTemplateWithMap($args, $auth['read'], $opts['extraParams'], $opts['paramDefaults']));
     $link = data_entry_helper::get_reload_link_parts();

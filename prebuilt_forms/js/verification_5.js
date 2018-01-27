@@ -334,6 +334,21 @@ indiciaData.rowIdToReselect = false;
 
     // Use an AJAX call to get the server to send the email
   function sendEmail() {
+    //To Do - it might be better to provide a user_id, although providing the email is supported by
+    //comment page as it is required for anonymous users.
+    var user_id=null;
+    //If there is a link to the comment page, then add the link with required params
+    if (indiciaData.warehouseRecordCommentPageLinkURL&&indiciaData.warehouseRecordCommentPageLinkLabel&&occurrenceId) {
+      var personIdentifierParam;
+      if (user_id) {
+        personIdentifierParam='&user_id='+user_id;
+      } else {
+        personIdentifierParam='&email_address='+email.to;  
+      }
+      var warehouseRecordCommentPageLink='<a href="'+indiciaData.warehouseRecordCommentPageLinkURL+'?occurrence_id='+occurrenceId+personIdentifierParam+'">'+indiciaData.warehouseRecordCommentPageLinkLabel+'</a>';
+      email.body = email.body
+          .replace('%warehouseRecordCommentPageLink%', warehouseRecordCommentPageLink);
+    }
     $.post(
       indiciaData.ajaxUrl + '/email/' + indiciaData.nid + urlSep,
       email,
