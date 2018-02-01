@@ -1323,7 +1323,7 @@ HTML
   }
 
   private static function getComments($readAuth, $params, $includeAddNew = TRUE) {
-    iform_load_helpers(array('report_helper'));
+    iform_load_helpers(array('data_entry_helper', 'report_helper'));
     $options = array(
       'dataSource' => 'reports_for_prebuilt_forms/verification_5/occurrence_comments_and_dets',
       'readAuth' => $readAuth,
@@ -1389,7 +1389,9 @@ HTML
       } else {
         $r .= '<input type="hidden" id="comment-confidential" value="f" />';
       }
-      $r .= '<textarea id="comment-text"></textarea>';
+      $r .= data_entry_helper::textarea([
+        'fieldname' => 'comment-text'
+      ]);
       $r .= data_entry_helper::text_input([
         'label' => lang::get('External reference or other source'),
         'fieldname' => 'comment-reference'
