@@ -806,6 +806,7 @@ HTML
         'readAuth' => $auth['read'],
         'itemsPerPage' => 20,
         'extraParams' => array_merge($opts['extraParams'], array('data_cleaner_filter' => 'f')),
+        'immutableParams' => array('quality_context' => 'all'),
         'columns' => array(
           array(
             'display' => '',
@@ -821,7 +822,6 @@ HTML
     data_entry_helper::$javascript .= 'indiciaData.username = "' . hostsite_get_user_field('name') . "\";\n";
     data_entry_helper::$javascript .= 'indiciaData.userId = "' . $indicia_user_id . "\";\n";
     data_entry_helper::$javascript .= 'indiciaData.rootUrl = "' . $link['path'] . "\";\n";
-    data_entry_helper::$javascript .= 'indiciaData.website_id = ' . $args['website_id'] . ";\n";
     data_entry_helper::$javascript .= 'indiciaData.ajaxFormPostUrl="' . iform_ajaxproxy_url($nid, 'occurrence') . "&user_id=$indicia_user_id&sharing=$args[sharing]\";\n";
     data_entry_helper::$javascript .= 'indiciaData.ajaxUrl="' . hostsite_get_url('iform/ajax/verification_5') . "\";\n";
     data_entry_helper::$javascript .= 'indiciaData.autoDiscard = ' . $args['auto_discard_rows'] . ";\n";
