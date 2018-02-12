@@ -576,7 +576,6 @@ indiciaData.rowIdToReselect = false;
   // show the list of tickboxes for verifying multiple records quickly
   function showTickList() {
     $('.check-row').attr('checked', false);
-    $('#row' + occurrenceId + ' .check-row').attr('checked', true);
     $('.check-row').show();
     $('#action-buttons-status label').html('With ticked records:');
     $('#btn-multiple').addClass('active').html('Review single records').after($('#action-buttons-status'));
