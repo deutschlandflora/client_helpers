@@ -732,17 +732,16 @@ JS;
         'createPersonalSites' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path."createPersonalSites.js")),
         'autocomplete' => array(
           'deps' => array('jquery', 'jquery_ui'),
-          'javascript' => array(self::$js_path."indicia.widgets.js")
-        ),// 'stylesheets' => array(self::$css_path."jquery.autocomplete.css"), 'javascript' => array(self::$js_path."jquery.autocomplete.js")),
+          'javascript' => array(self::$js_path . "indicia.widgets.js")
+        ),
         'indicia_locks' => array('deps' => array('jquery_cookie', 'json'), 'javascript' => array(self::$js_path."indicia.locks.js")),
         'jquery_cookie' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path . "jquery.cookie.js")),
         'jquery_ui' => array(
           'deps' => array('jquery'),
           'stylesheets' => array(
-            self::$css_path . "jquery-ui.min.css",
-            "$indicia_theme_path$indicia_theme/jquery-ui.custom.css"
+            "$indicia_theme_path$indicia_theme/jquery-ui.theme.min.css"
           ),
-          'javascript' => array(self::$js_path."jquery-ui.min.js")
+          'javascript' => array(self::$js_path . "jquery-ui.min.js")
         ),
         'jquery_ui_fr' => array('deps' => array('jquery_ui'), 'javascript' => array(self::$js_path."jquery.ui.datepicker-fr.js")),
         'jquery_form' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path."jquery.form.js")),
