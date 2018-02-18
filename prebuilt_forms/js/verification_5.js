@@ -331,23 +331,81 @@ indiciaData.rowIdToReselect = false;
     html += recorderQueryCommentForm();
     popupQueryForm(html);
   }
+  
+  /*
+   * Saves the authorisation token for the Record Comment Quick Reply page into the database
+   * so that it is saved against the occurrence id
+   * @param string authorisationNumber
+   * @return boolean indicates if database was successfully written to or not
+   * 
+   */
+  function saveAuthorisationNumberToDb(authorisationNumber) {
+    var data = {
+      'website_id': indiciaData.website_id,
+      'comment_quick_reply_page_auth:occurrence_id': occurrenceId,
+      'comment_quick_reply_page_auth:token': authorisationNumber,
+    };   
+    $.post(
+      indiciaData.ajaxFormPostUrl.replace('occurrence', 'quick_reply_auth'),
+      data,
+      function (data) {
+        if (typeof data.error !== "undefined") {
+          alert(data.error);
+          //Inform calling function that we have been unable to write to DB
+          return true;
+        } else {
+          return false;
+        }
+      },
+      'json'
+    );
+  }
 
     // Use an AJAX call to get the server to send the email
   function sendEmail() {
-    //To Do - it might be better to provide a user_id, although providing the email is supported by
-    //comment page as it is required for anonymous users.
+    var authorisationWriteToDbFailed =false;
+    var autoRemoveLink =false;
+    // To Do - Providing the email is supported by comment page as it is required for anonymous users,
+    // however it would be better if we can support providing of the user_id
     var user_id=null;
-    //If there is a link to the comment page, then add the link with required params
-    if (indiciaData.warehouseRecordCommentPageLinkURL&&indiciaData.warehouseRecordCommentPageLinkLabel&&occurrenceId) {
+    //If the email isn't for an occurrence or the setup options are missing 
+    //then then we won't be writing an auth to the DB, and we will want to remove the link from the email body
+    if (!indiciaData.commentQuickReplyPageLinkURL||!indiciaData.commentQuickReplyPageLinkLabel||!occurrenceId) {
+      authorisationWriteToDbFailed=false;
+      autoRemoveLink=true;
+    } else {
+      //Setup the quick reply page link and get an authorisation number
       var personIdentifierParam;
       if (user_id) {
         personIdentifierParam='&user_id='+user_id;
       } else {
         personIdentifierParam='&email_address='+email.to;  
       }
-      var warehouseRecordCommentPageLink='<a href="'+indiciaData.warehouseRecordCommentPageLinkURL+'?occurrence_id='+occurrenceId+personIdentifierParam+'">'+indiciaData.warehouseRecordCommentPageLinkLabel+'</a>';
+      //Need an authorisation unique string in URL, this is linked to the occurrence.
+      //Only if correct auth and occurrence_id combination are present does the Record Comment Quick Reply page display
+      var authorisationNumber = makeAuthNumber();
+      var authorisationParam='&auth='+authorisationNumber;
+      var commentQuickReplyPageLink='<a href="'+indiciaData.commentQuickReplyPageLinkURL+'?occurrence_id='+occurrenceId+personIdentifierParam+authorisationParam+'">'+
+          indiciaData.commentQuickReplyPageLinkLabel+'</a>';
+      //This returns true if error saving authorisation to the database.
+      authorisationWriteToDbFailed=saveAuthorisationNumberToDb(authorisationNumber);
+      //AVB To DO. This needs removing, the failure detection is not currently working 
+      authorisationWriteToDbFailed=false;
+    }
+    // Warn user if the DB authorisation write to the database failed, as we will need to auto remove the link
+    if (authorisationWriteToDbFailed===true) {
+      alert('The email will be sent, however we have not been able to generate the link '+
+            'to the Occurrence Comment Quick Reply page because of a problem when communicating with the database.\n\n\It will be removed from the the email.')
+    }
+    // Replace the text token from the email with the actual link or remove the link if
+    // A. We couldn't write the authorisation to the database
+    // B. The system is requesting we remove the link (perhaps the required options are not filled in)
+    if (authorisationWriteToDbFailed===false && autoRemoveLink===false) {  
       email.body = email.body
-          .replace('%warehouseRecordCommentPageLink%', warehouseRecordCommentPageLink);
+            .replace('%commentQuickReplyPageLink%', commentQuickReplyPageLink);
+    } else {
+      email.body = email.body
+            .replace('%commentQuickReplyPageLink%', '');  
     }
     $.post(
       indiciaData.ajaxUrl + '/email/' + indiciaData.nid + urlSep,
@@ -365,6 +423,20 @@ indiciaData.rowIdToReselect = false;
         }
       }
     );
+  }
+  
+  /*
+   * Create a random authorisation number to pass to the Record Comment Quick Reply page
+   * (This page sits outside the Warehouse)
+   * @returns string random authorisation token
+   */
+  function makeAuthNumber() {
+    var characterSelection = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var authNum = "";
+    for (var digit = 0; digit < 16; digit++) {
+      authNum += characterSelection.charAt(Math.floor(Math.random() * characterSelection.length));
+    }
+    return authNum;
   }
 
   function processEmail() {

@@ -248,11 +248,13 @@ class iform_verification_5 {
         ), array(
           'name' => 'email_body_send_to_verifier',
           'caption' => 'Send to Expert Email Body',
-          'description' => 'Default body for the send to expert email. Replacements allowed include %taxon%, %id% and %record% which is replaced to give details of the record.',
+          'description' => 'Default body for the send to expert email. Replacements allowed include %taxon%, %id% and %record% which is replaced to give details of the record. '
+            . 'Use the %commentQuickReplyPageLink% replacement if you wish the recipient to be able to quickly reply to comments using a linked page, '
+            . 'setup the options for this using the COMMENT QUICK REPLY PAGE LINK section of this page',
           'type' => 'textarea',
           'default' => 'We would appreciate your opinion on the following record. Please reply to this mail with "accepted", "not accepted" or "query" '.
               'in the email body, followed by any comments you have including the proposed re-identification if relevant on the next line.'.
-              "\n\n%record%\n\n%warehouseRecordCommentPageLink%",
+              "\n\n%record%\n\n%commentQuickReplyPageLink%",
           'group' => 'Verifier emails'
         ), array(
           'name' => 'email_subject_send_to_recorder',
@@ -396,19 +398,19 @@ class iform_verification_5 {
           'required' => 'false'
         ),
         array(
-          'name' => 'warehouse_record_comment_page_link_label',
-          'caption' => 'Warehouse record comment page link label',
-          'description' => 'Label for the link to the Warehouse record comment page.',
+          'name' => 'comment_quick_reply_page_link_label',
+          'caption' => 'Comment quick reply page link label',
+          'description' => 'Label for the link to the Comment Quick Reply page.',
           'type' => 'text_input',
-          'group' => 'Warehouse record comment page link',
+          'group' => 'Comment quick reply page link',
           'required' => 'false'
         ),
         array(
-          'name' => 'warehouse_record_comment_page_link_url',
-          'caption' => 'Warehouse record comment page link URL',
-          'description' => 'URL link to the Warehouse record comment page.',
+          'name' => 'comment_quick_reply_page_link_url',
+          'caption' => 'Comment quick reply page link URL',
+          'description' => 'URL link to the Comment Quick Reply page.',
           'type' => 'text_input',
-          'group' => 'Warehouse record comment page link',
+          'group' => 'Comment quick reply page link',
           'required' => 'false'
         )
       )
@@ -830,9 +832,9 @@ HTML
           )
         )
       ));
-    if (!empty($args['warehouse_record_comment_page_link_label']) && !empty($args['warehouse_record_comment_page_link_url'])) {
-      data_entry_helper::$javascript .= 'indiciaData.warehouseRecordCommentPageLinkLabel = "' . $args['warehouse_record_comment_page_link_label'] . "\";\n";
-      data_entry_helper::$javascript .= 'indiciaData.warehouseRecordCommentPageLinkURL = "' . $args['warehouse_record_comment_page_link_url'] . "\";\n";
+    if (!empty($args['comment_quick_reply_page_link_label']) && !empty($args['comment_quick_reply_page_link_url'])) {
+      data_entry_helper::$javascript .= 'indiciaData.commentQuickReplyPageLinkLabel = "' . $args['comment_quick_reply_page_link_label'] . "\";\n";
+      data_entry_helper::$javascript .= 'indiciaData.commentQuickReplyPageLinkURL = "' . $args['comment_quick_reply_page_link_url'] . "\";\n";
     }
     $r = str_replace(array('{grid}', '{log}', '{paramsForm}'), array($grid, $log, $params),
         self::getTemplateWithMap($args, $auth['read'], $opts['extraParams'], $opts['paramDefaults']));
