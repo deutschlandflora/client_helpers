@@ -369,20 +369,29 @@ indiciaData.rowIdToReselect = false;
         $.ajax({
           url: indiciaData.ajaxUrl + '/mediaAndComments/' + indiciaData.nid + urlSep +
           'occurrence_id=' + occurrenceId + '&sample_id=' + currRec.extra.sample_id,
-          async: false,
           dataType: 'json',
           success: function handleResponse(response) {
+            var comment = indiciaData.commentTranslations.emailed.replace(
+              '{1}',
+              email.subtype === 'R' ? indiciaData.commentTranslations.recorder : indiciaData.commentTranslations.expert
+            );
             email.body = email.body.replace(/\[Photos]/g, response.media);
             email.body = email.body.replace(/\[Comments]/g, response.comments);
+            // save a comment to indicate that the mail was sent
+            indiciaFns.saveComment(
+              comment,
+              null,
+              ($('#email-confidential:checked').length > 0 ? 't' : 'f'),
+              email,
+              't',
+              true
+            );
+            sendEmail();
           }
         });
-        // save a comment to indicate that the mail was sent
-        indiciaFns.saveComment(indiciaData.commentTranslations.emailed.replace('{1}', email.subtype === 'R' ?
-          indiciaData.commentTranslations.recorder : indiciaData.commentTranslations.expert), null,
-          ($('#email-confidential:checked').length > 0 ? 't' : 'f'), email, 't', true);
+      } else {
+        sendEmail();
       }
-
-      sendEmail();
     }
     return false;
   }
@@ -849,18 +858,54 @@ indiciaData.rowIdToReselect = false;
     })
   }
 
+  /**
+   * Mouse over map displays a layers button hint.
+   */
+  function onMouseOverMap() {
+    var myTooltip;
+    var layersButton = $('.olControlLayerSwitcher .maximizeDiv.olButton');
+    var btnRect = layersButton[0].getBoundingClientRect();
+    var tooltipRect;
+    var leftPos;
+    var topPos;
+    $('body').append('<div class="ui-tip below-left" id="tip-layers-button"><p>Click the blue + button to show layers</p></div>');
+    myTooltip = $('#tip-layers-button');
+    // Position the tip.
+    if (myTooltip.width() > 300) {
+      myTooltip.css({ width: '300px' });
+    }
+    tooltipRect = myTooltip[0].getBoundingClientRect();
+    leftPos = Math.min(btnRect.left, $(window).width() - tooltipRect.width - 10);
+    topPos = btnRect.bottom + 8;
+    if (topPos + tooltipRect.height > $(window).height()) {
+      topPos = btnRect.top - (tooltipRect.height + 4);
+    }
+    topPos += $(window).scrollTop();
+    // Fade the tip in and out.
+    myTooltip.css({
+      display: 'none',
+      left: leftPos,
+      top: topPos
+    }).fadeIn(400, function () {
+      $(this).delay(2000).fadeOut('slow');
+    });
+    // Only do this once.
+    indiciaData.mapdiv.map.events.unregister('mouseover', indiciaData.mapdiv.map, onMouseOverMap);
+  }
+
   mapInitialisationHooks.push(function initMap(div) {
     var defaultStyle = new OpenLayers.Style({
-      fillColor: '#0000ff',
-      strokeColor: '#0000ff',
+      fillColor: '#ff0000',
+      strokeColor: '#ff0000',
       strokeWidth: '${getstrokewidth}',
       fillOpacity: 0.5,
-      strokeOpacity: 0.8
+      strokeOpacity: 0.8,
+      pointRadius: 5
     }, {
       context: {
         getstrokewidth: function getstrokewidth(feature) {
           var width = feature.geometry.getBounds().right - feature.geometry.getBounds().left;
-          var strokeWidth = (width === 0) ? 1 : 10 - (width / feature.layer.map.getResolution());
+          var strokeWidth = (width === 0) ? 1 : 12 - (width / feature.layer.map.getResolution());
           return (strokeWidth < 2) ? 2 : strokeWidth;
         }
       }
@@ -868,6 +913,7 @@ indiciaData.rowIdToReselect = false;
     div.map.editLayer.style = null;
     div.map.editLayer.styleMap = new OpenLayers.StyleMap(defaultStyle);
     showTab();
+    div.map.events.register('mouseover', div.map, onMouseOverMap);
   });
 
   function verifyRecordSet(trusted) {
@@ -881,7 +927,8 @@ indiciaData.rowIdToReselect = false;
     }
     request = indiciaData.ajaxUrl + '/bulk_verify/' + indiciaData.nid;
     $.post(request,
-      'report=' + encodeURI(indiciaData.reports.verification.grid_verification_grid[0].settings.dataSource) + '&params=' + encodeURI(JSON.stringify(params)) +
+      'report=' + encodeURIComponent(indiciaData.reports.verification.grid_verification_grid[0].settings.dataSource) +
+      '&params=' + encodeURIComponent(JSON.stringify(params)) +
       '&user_id=' + indiciaData.userId + '&ignore=' + ignoreRules + substatus,
       function (response) {
         indiciaData.reports.verification.grid_verification_grid.reload(true);
@@ -1050,6 +1097,14 @@ indiciaData.rowIdToReselect = false;
       }
       popupHtml += '<label><input type="checkbox" name="ignore-checks" /> Include failures?</label><p class="helpText">The records will only be accepted if they do not fail ' +
         'any automated verification checks. If you <em>really</em> trust the records are correct then you can verify them even if they fail some checks by ticking this box.</p>';
+      if ($('#actions-more').is(':visible')) {
+        // Enable level 2 options.
+        popupHtml += '<label>Choose verification status: <select id="bulk-substatus">' +
+          '<option value="">Accepted</option>' +
+          '<option value="1">Accepted as correct</option>' +
+          '<option value="2">Accepted as considered correct</option>' +
+          '</select></label><br/>';
+      }
       popupHtml += '<button type="button" class="default-button verify-button">Verify chosen records</button>' +
         '<button type="button" class="default-button cancel-button">Cancel</button></p></div>';
       $.fancybox(popupHtml);
@@ -1058,6 +1113,8 @@ indiciaData.rowIdToReselect = false;
         var radio = $('.quick-verify-popup input[name=quick-option]:checked');
         var request;
         var ignoreParams;
+        var substatus = $('#actions-more').is(':visible') && $('#bulk-substatus option:selected').val() !== ''
+          ? '&record_substatus=' + $('#bulk-substatus option:selected').val() : '';
         if (radio.length === 1) {
           if ($(radio).val().indexOf('recorder') !== -1) {
             params.created_by_id = currRec.extra.created_by_id;
@@ -1071,7 +1128,7 @@ indiciaData.rowIdToReselect = false;
           ignoreParams = $('.quick-verify-popup input[name=ignore-checks]:checked').length > 0 ? 'true' : 'false';
           $.post(request,
             'report=' + encodeURI(indiciaData.reports.verification.grid_verification_grid[0].settings.dataSource) + '&params=' + encodeURI(JSON.stringify(params)) +
-            '&user_id=' + indiciaData.userId + '&ignore=' + ignoreParams,
+            '&user_id=' + indiciaData.userId + '&ignore=' + ignoreParams + substatus,
             function (response) {
               indiciaData.reports.verification.grid_verification_grid.reload();
               alert(response + ' records processed');
