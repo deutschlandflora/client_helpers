@@ -2727,8 +2727,13 @@ JS;
       // We've been given an attribute value but no caption for the species name in the data to load for an existing record. So look it up.
       $r = self::get_population_data(array(
         'table' => 'cache_taxa_taxon_list',
-        'extraParams' => array('nonce'=>$options['extraParams']['nonce'],'auth_token'=>$options['extraParams']['auth_token'])+
-          array($idField => $options['default'],'columns'=>"taxon")
+        'extraParams' => array(
+          'nonce' => $options['extraParams']['nonce'],
+          'auth_token' => $options['extraParams']['auth_token'],
+        ) + array(
+          $idField => $options['default'],
+          'columns' => 'taxon',
+        )
       ));
       $options['defaultCaption']=$r[0]['taxon'];
     }
