@@ -249,12 +249,12 @@ class iform_verification_5 {
           'name' => 'email_body_send_to_verifier',
           'caption' => 'Send to Expert Email Body',
           'description' => 'Default body for the send to expert email. Replacements allowed include %taxon%, %id% and %record% which is replaced to give details of the record. '
-            . 'Use the %commentQuickReplyPageLink% replacement if you wish the recipient to be able to quickly reply to comments using a linked page, '
-            . 'setup the options for this using the COMMENT QUICK REPLY PAGE LINK section of this page',
+           . 'Use the %commentQuickReplyPageLink% replacement if you wish the recipient to be able to quickly reply to comments using a linked page, '
+           . 'setup the options for this using the COMMENT QUICK REPLY PAGE LINK section of this page',
           'type' => 'textarea',
           'default' => 'We would appreciate your opinion on the following record. Please reply to this mail with "accepted", "not accepted" or "query" '.
               'in the email body, followed by any comments you have including the proposed re-identification if relevant on the next line.'.
-              "\n\n%record%\n\n%commentQuickReplyPageLink%",
+              "\n\n%record%",
           'group' => 'Verifier emails'
         ), array(
           'name' => 'email_subject_send_to_recorder',
@@ -266,7 +266,9 @@ class iform_verification_5 {
         ), array(
           'name' => 'email_body_send_to_recorder',
           'caption' => 'Send to Recorder Email Body',
-          'description' => 'Default body for the send to recorder email. Replacements allowed include %taxon%, %id% and %record% which is replaced to give details of the record.',
+          'description' => 'Default body for the send to recorder email. Replacements allowed include %taxon%, %id% and %record% which is replaced to give details of the record. '
+           . 'Use the %commentQuickReplyPageLink% replacement if you wish the recipient to be able to quickly reply to queries using a linked page, '
+           . 'setup the options for this using the COMMENT QUICK REPLY PAGE LINK section of this page',
           'type' => 'textarea',
           'default' => 'The following record requires confirmation. Please could you reply to this email stating how confident you are that the record is correct '.
               'and any other information you have which may help to confirm this.'.
