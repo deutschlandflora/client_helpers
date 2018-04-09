@@ -129,6 +129,7 @@ $indicia_templates = array(
   'autocomplete' => '<input id="{inputId}" name="{inputId}" type="text" value="{defaultCaption}" {class} {disabled} {title}/>' . "\n",
   'autocomplete_javascript' => "$('input#{escaped_input_id}').indiciaAutocomplete({
     id: '{id}',
+    fieldname: '{fieldname}',
     baseUrl: '{url}',
     extraParams: {extraParams},
     captionField: '{captionField}',
