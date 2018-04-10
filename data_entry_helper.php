@@ -3816,9 +3816,16 @@ if ($('#$options[id]').parents('.ui-tabs-panel').length) {
   }
 
   /**
-   * Builds an array to filter for the appropriate selection of species names, e.g. how it accepts searches for
-   * common names and synonyms.
-   * @param array $options Options array as passed to the species grid.
+   * Builds a species name search filter.
+   *
+   * Builds an array to filter for the appropriate selection of species names,
+   * e.g. how it accepts searches for common names and synonyms.
+   *
+   * @param array $options
+   *   Options array as passed to the species grid.
+   *
+   * @return array
+   *   Key value pairs for the filter.
    */
   public static function getSpeciesNamesFilter(&$options) {
     $filterFields = self::parseSpeciesNameFilterMode($options);
@@ -3835,7 +3842,7 @@ if ($('#$options[id]').parents('.ui-tabs-panel').length) {
       if ($options['taxonFilterField'] === 'preferred_name') {
         $options['taxonFilterField'] = 'preferred_taxon';
       }
-      // filter the taxa available to record
+      // Filter the taxa available to record.
       $filterFields[$options['taxonFilterField']] = json_encode($options['taxonFilter']);
     }
     return $filterFields;
@@ -3845,8 +3852,13 @@ if ($('#$options[id]').parents('.ui-tabs-panel').length) {
    * Private utility function to extract the fields which need filtering against, plus any complex
    * SQL where clauses, required to do a species name filter according to the current mode (e.g.
    * preferred names only, all names etc).
-   * @param array $options Species_checklist options array.
-   * @return array Will be populated with the keys and values of any fields than need to be filtered.
+   *
+   * @param array $options
+   *   Species_checklist options array.
+   *
+   * @return array
+   *   Will be populated with the keys and values of any fields than need to
+   *   be filtered.
    */
   private static function parseSpeciesNameFilterMode($options) {
     $filterFields = [];

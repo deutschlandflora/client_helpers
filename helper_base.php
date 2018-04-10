@@ -138,41 +138,7 @@ $indicia_templates = array(
     defaultCaption: '{defaultCaption}',
     mode: '{mode}',
     formatOptions: {formatOptions}
-  });
-  /*    {
-
-        selectMode: {selectMode},
-        warnIfNoMatch: {warnIfNoMatch},
-        continueOnBlur: {continueOnBlur},
-        matchContains: {matchContains},
-        parse: function(data)
-        {
-          // Clear the current selected key as the user has changed the search text
-          jQuery('input#{escaped_id}').val('');
-          var results = [], done = [];
-          jQuery.each(data, function(i, item) {
-            if ({duplicateCheck}) {
-              results.push({
-                'data' : item,
-                'result' : item.{captionField},
-                'value' : item.{valueField}
-              });
-              {storeDuplicates}
-            }
-          });
-          return results;
-        },
-      formatItem: {formatFunction}
-      {max}
-    });
-    $('input#{escaped_input_id}').result(function(event, data) {
-      $('input#{escaped_id}').attr('value', data.{valueField});
-      $('.item-icon').remove();
-      if (typeof data.icon!=='undefined') {
-        $('input#{escaped_input_id}').after(data.icon).next().hover(indiciaFns.hoverIdDiffIcon);
-      }
-      $('input#{escaped_id}').trigger('change', data);
-    });*/\r\n",
+  });\n",
   'sub_list' => '<div id="{id}:box" class="control-box wide"><div>'."\n".
     '<div>'."\n".
     '{panel_control} <input id="{id}:add" type="button" value="'.lang::get('add').'" />'."\n".
@@ -686,8 +652,7 @@ JS;
   /**
    * List of external resources including stylesheets and js files used by the data entry helper class.
    */
-  public static function get_resources()
-  {
+  public static function get_resources() {
     if (self::$resource_list === NULL) {
       $base = parent::$base_url;
       if (!self::$js_path) {
@@ -699,7 +664,8 @@ JS;
       }
       if (!self::$css_path) {
         self::$css_path =$base . 'media/css/';
-      } else if (substr(self::$css_path, -1) != "/") {
+      }
+      elseif (substr(self::$css_path, -1) != "/") {
         // Ensure a trailing slash.
         self::$css_path .= "/";
       }
@@ -712,7 +678,7 @@ JS;
         // Use default theme path if page does not specify it's own.
         $indicia_theme_path = preg_replace('/css\/$/', 'themes/', self::$css_path);
       }
-      // ensure a trailing path
+      // Ensure a trailing path.
       if (substr($indicia_theme_path, -1) !== '/')
         $indicia_theme_path .= '/';
       $protocol = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
