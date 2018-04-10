@@ -5697,7 +5697,7 @@ $('div#$escaped_divId').indiciaTreeBrowser({
     $options['class'] = trim($options['class'] . ' control-box');
     // We want to apply validation to the inner items, not the outer control
     if (array_key_exists('validation', $options)) {
-      $attributes = self::buildValidationAttributes($options);
+      $attributes = self::buildElementAttributes($options);
       unset($options['validation']);
     } else {
       $attributes = '';
