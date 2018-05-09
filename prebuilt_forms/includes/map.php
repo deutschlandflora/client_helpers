@@ -17,7 +17,7 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link  http://code.google.com/p/indicia/
+ * @link  https://github.com/indicia-team/warehouse/
  */
 
 /**
@@ -300,12 +300,12 @@ function iform_map_get_map_options($args, $readAuth) {
       if ($separatorPos !== FALSE) {
         // A title is present.
         $title = trim(substr($layer, 0, $separatorPos));
-        $feature = trim(substr($layer, $separatorPos + 1)); 
+        $feature = trim(substr($layer, $separatorPos + 1));
         $options['indiciaWMSLayers'][$title] = $feature;
       }
       else {
         $options['indiciaWMSLayers'][] = $layer;
-      }      
+      }
     }
   }
   // set up standard control list if supplied
@@ -326,7 +326,7 @@ function iform_map_get_map_options($args, $readAuth) {
     $options['proxy'] = data_entry_helper::getRootFolder(true) . hostsite_get_config_value('iform', 'proxy_path', 'proxy') . '&url=';
   }
   // And a single location boundary if defined
-  if (!empty($args['location_boundary_id'])) 
+  if (!empty($args['location_boundary_id']))
     $location = $args['location_boundary_id'];
   elseif (isset($args['display_user_profile_location']) && $args['display_user_profile_location']) {
     $location = hostsite_get_user_field('location');
@@ -383,11 +383,11 @@ SCRIPT;
   // Note, since the following moves the map, we want it to be the first mapInitialisationHook
   data_entry_helper::$javascript .= <<<SCRIPT
 indiciaFns.zoomToBounds = function(mapdiv, bounds) {
-  // Skip zoom to loaded bounds if already zoomed to a report output, remembering a position set in a cookie, or 
+  // Skip zoom to loaded bounds if already zoomed to a report output, remembering a position set in a cookie, or
   // loading an initial feature (e.g. viewing an edited record)
   if (
       (typeof mapdiv.settings.zoomMapToOutput==="undefined" || mapdiv.settings.zoomMapToOutput===false) &&
-      (typeof $.cookie === 'undefined' || $.cookie('maplon')===null || mapdiv.settings.rememberPos===false) && 
+      (typeof $.cookie === 'undefined' || $.cookie('maplon')===null || mapdiv.settings.rememberPos===false) &&
       !mapdiv.settings.initialFeatureWkt
       ) {
     if (mapdiv.map.getZoomForExtent(bounds) > mapdiv.settings.maxZoom) {
@@ -419,7 +419,7 @@ mapInitialisationHooks.push(function(mapdiv) {
     }
   });
   $.each(features, function() {
-    this.style = {fillOpacity: 0, strokeColor: '#0000ff', strokeWidth: 2};  
+    this.style = {fillOpacity: 0, strokeColor: '#0000ff', strokeWidth: 2};
     this.style.fillOpacity=0;
     if (mapdiv.map.projection.getCode() != mapdiv.indiciaProjection.getCode()) {
       feature.geometry.transform(mapdiv.indiciaProjection, mapdiv.map.projection);

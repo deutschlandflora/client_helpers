@@ -17,7 +17,7 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link  http://code.google.com/p/indicia/
+ * @link  https://github.com/indicia-team/warehouse/
  */
 
 /**
@@ -75,7 +75,7 @@ function iform_user_get_hidden_inputs($args) {
 }
 
 /**
- * Method to read a parameter from the arguments of a form that contains a list of key=value pairs on separate lines. 
+ * Method to read a parameter from the arguments of a form that contains a list of key=value pairs on separate lines.
  * Each value is checked for references to the user's data (either {user_id}, {username}, {email} or {profile_*})
  * and if found these substitutions are replaced.
  * @param string $listData Form argument data, with each key value pair on a separate line.
@@ -108,10 +108,10 @@ function get_options_array_with_user_data($listData) {
  * {email} - the email address stored for the user in the content management system.
  * {profile_*} - the respective field from the user profile stored in the content management system.
  * [permission] - does the user have this permission? Replaces with 1 if they have the permission, else 0.
- * 
+ *
  * Can handle text and serialised arrays (which are returned as comma separated list), and also Drupal
  * vocabulary profile data: these are returned as stdClass objects from the hostsite_get_user_field call.
- * There are two possibilities for what the user may want to store when it comes to vocab data: either 
+ * There are two possibilities for what the user may want to store when it comes to vocab data: either
  * the tid or the name (actual text value). The default is 'tid' (the vocabulary term id): this can be
  * overriden by appending :name to the field name - e.g. {profile_hub} will give hub tid, {profile_hub:name}
  * will give the hub text name.

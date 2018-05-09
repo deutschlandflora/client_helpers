@@ -17,7 +17,7 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link  http://code.google.com/p/indicia/
+ * @link  https://github.com/indicia-team/warehouse/
  */
 
 /**
@@ -37,7 +37,7 @@ function iform_lang_iso_639_2($lang=null) {
     global $language;
     $lang = $language->language;
   }
-  // If there is a sub-language, ignore it (e.g. en-GB becomes just en). 
+  // If there is a sub-language, ignore it (e.g. en-GB becomes just en).
   // @todo may want to handle sub-languages
   $lang = explode('-', $lang);
   $lang = $lang[0];

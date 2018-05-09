@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 global $custom_terms;
@@ -106,5 +106,5 @@ $custom_terms = array(
 	'LANG_Indicia_Warehouse_Error' => 'Error returned from Indicia Warehouse',
 	'LANG_Survey_Already_Exists' => 'Eine Erfassung besteht bereits für diese Kombination Transekt/Datum. Sind Sie sicher diese hinzuzufügen/zu speichern?',
 	'LANG_No_Access_To_Occurrence' => 'This record is not a valid occurrence.'
-	
+
 );

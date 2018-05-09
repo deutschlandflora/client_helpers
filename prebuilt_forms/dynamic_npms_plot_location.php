@@ -17,12 +17,12 @@
  * @subpackage PrebuiltForms
  * @author    Indicia Team
  * @license    http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link     http://code.google.com/p/indicia/
+ * @link     https://github.com/indicia-team/warehouse/
  */
 
 /**
  * Prebuilt Indicia data entry form.
- * 
+ *
  * @package    Client
  * @subpackage PrebuiltForms
  */
@@ -31,7 +31,7 @@ require_once('dynamic_location.php');
 
 class iform_dynamic_npms_plot_location extends iform_dynamic_location {
 
-  /** 
+  /**
    * Return the form metadata.
    * @return array The definition of the form.
    */
@@ -48,7 +48,7 @@ class iform_dynamic_npms_plot_location extends iform_dynamic_location {
    * Get the list of parameters for this form.
    * @return array List of parameters that this form requires.
    */
-  public static function get_parameters() {    
+  public static function get_parameters() {
     $retVal = array_merge(
       parent::get_parameters(),
       array(
@@ -70,7 +70,7 @@ class iform_dynamic_npms_plot_location extends iform_dynamic_location {
     );
     return $retVal;
   }
-  
+
   public static function get_form($args, $nid) {
     if (empty($args['square_location_type_id']))
       return '<div><em>Please fill in the square location type id argument</em></div>';
@@ -78,27 +78,27 @@ class iform_dynamic_npms_plot_location extends iform_dynamic_location {
       return '<div><em>Please fill in the user squares attribute id argument</em></div>';
     return parent::get_form($args, $nid);
   }
-  
+
   /*
    * Only load existing plot data if the user is assigned the plot
    */
   protected static function getEntity($args, $auth) {
     data_entry_helper::$entity_to_load = array();
     if (!empty($_GET['zoom_id'])) {
-      self::zoom_map_when_adding($auth['read'], 'location', $_GET['zoom_id']); 
+      self::zoom_map_when_adding($auth['read'], 'location', $_GET['zoom_id']);
     } else {
       $accessAllowed=false;
       //If we can't get current user id then set to 0 so we don't retrieve any data
       if (function_exists('hostsite_get_user_field'))
         $currentUserId=hostsite_get_user_field('indicia_user_id');
-      else 
+      else
         $currentUserId=0;
       //Get the squares/plots user has access to.
       $accessCheckData = data_entry_helper::get_report_data(array(
         'dataSource'=>'reports_for_prebuilt_forms/Splash/get_my_squares_and_plots',
         'readAuth'=>$auth['read'],
         'extraParams'=>array('core_square_location_type_id'=>$args['square_location_type_id'],'additional_square_location_type_id'=>$args['square_location_type_id'],'current_user_id'=>$currentUserId,'user_square_attr_id'=>$args['user_square_attr_id'],'no_vice_county_found_message'=>'','vice_county_location_attribute_id'=>0,'pss_mode'=>true)
-      )); 
+      ));
       //Go through each of their plot/square allocations and only load the data if there is a match for the
       //location_id in the URL params.
       if (!empty($accessCheckData)) {
@@ -108,8 +108,8 @@ class iform_dynamic_npms_plot_location extends iform_dynamic_location {
         }
       }
       if ($accessAllowed===true)
-        data_entry_helper::load_existing_record($auth['read'], 'location', $_GET['location_id'], 'detail', false, true);   
+        data_entry_helper::load_existing_record($auth['read'], 'location', $_GET['location_id'], 'detail', false, true);
     }
-  }  
+  }
 }
 

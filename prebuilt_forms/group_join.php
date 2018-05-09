@@ -17,20 +17,20 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link  http://code.google.com/p/indicia/
+ * @link  https://github.com/indicia-team/warehouse/
  */
 
 /**
  * A page allowing a user to join a group. Takes a group_id parameter. If the group is public, then joining is immediate, else the
- * user is added to the pending queue. Example use would be to link to this page using the actions column of a report listing 
+ * user is added to the pending queue. Example use would be to link to this page using the actions column of a report listing
  * available recording groups.
- * 
+ *
  * @package Client
  * @subpackage PrebuiltForms
  */
 class iform_group_join {
-   
-  /** 
+
+  /**
    * Return the form metadata.
    * @return array The definition of the form.
    */
@@ -42,7 +42,7 @@ class iform_group_join {
       'recommended' => true
     );
   }
-  
+
   /**
    * Get the list of parameters for this form.
    * @return array List of parameters that this form requires.
@@ -61,7 +61,7 @@ class iform_group_join {
       'required'=>false
     ));
   }
-  
+
   /**
    * Return the generated form output.
    * @param array $args List of parameter values passed through to the form depending on how the form has been configured.
@@ -111,28 +111,28 @@ class iform_group_join {
     } else {
       $data = array('groups_user:group_id' => $group['id'], 'groups_user:user_id' => $user_id);
       // request only, so make the groups_user record pending approval
-      if ($group['joining_method']==='R') 
+      if ($group['joining_method']==='R')
         $data['groups_user:pending'] = 't';
       $wrap = submission_builder::wrap($data, 'groups_user');
       $r = data_entry_helper::forward_post_to('groups_user', $wrap, $auth['write_tokens']);
-      if (!isset($r['success'])) 
+      if (!isset($r['success']))
         return self::abort('An error occurred whilst trying to update your group membership.', $args);
-      elseif ($group['joining_method']==='R') 
+      elseif ($group['joining_method']==='R')
         return self::abort("Your request to join $group[title] is now awaiting approval.", $args);
       else
         return self::success($auth, $group, $args);
     }
     return $r;
   }
-  
+
   private static function abort($msg, $args) {
     hostsite_show_message($msg);
-    // if there is a main page for groups, and this page was deliberately called (i.e. not just a cron indexing scan) then 
+    // if there is a main page for groups, and this page was deliberately called (i.e. not just a cron indexing scan) then
     // we can go back.
     if (!empty($_GET['group_id']) && !empty($args['groups_page_path']))
-      hostsite_goto_page($args['groups_page_path']);  
+      hostsite_goto_page($args['groups_page_path']);
   }
-  
+
   private static function success($auth, $group, $args) {
     module_load_include('inc', 'iform', 'iform.groups');
     return iform_show_group_join_success($group, $auth, false, $args['group_home_path'], $args['groups_page_path']);

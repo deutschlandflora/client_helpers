@@ -18,22 +18,22 @@
  * @subpackage PrebuiltForms
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
- 
+
 /**
  * Extension class that supplies tools for supporting moderation of records.
  */
 class extension_moderation {
 
-  /** 
+  /**
    * A stub method that simply allows the moderation.js file to be added to the page. This adds some
    * JavaScript functions that can be linked to grid actions to perform moderation functions.
    */
   public static function enable_actions($auth, $args, $tabalias, $options, $path) {
     return '';
   }
-  
+
   /**
    * Clears moderation notifications for a moderator automatically on visiting the page, so then they
    * will get notified about new incoming records.
@@ -52,7 +52,7 @@ class extension_moderation {
     if (count($notifications)>0) {
       $auth = data_entry_helper::get_read_write_auth($args['website_id'], $args['password']);
       //Setup the structure we need to submit.
-      foreach ($notifications as $notification) { 
+      foreach ($notifications as $notification) {
         $data['id']='notification';
         $data['fields']['id']['value'] = $notification['id'];
         $data['fields']['acknowledged']['value'] = 't';

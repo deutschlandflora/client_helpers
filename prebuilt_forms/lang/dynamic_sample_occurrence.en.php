@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 include_once 'dynamic.en.php';
@@ -31,7 +31,7 @@ $custom_terms = array_merge($custom_terms, array(
   'LANG_Add_Sample_Single' => 'Add Single Occurrence',
   'LANG_Add_Sample_Grid' => 'Add List of Occurrences',
 
-	'LANG_Tab_aboutyou' => 'About You',      
+	'LANG_Tab_aboutyou' => 'About You',
 	'LANG_Tab_Instructions_aboutyou' => '<strong>About You</strong><br/>Please tell us about yourself first.',
 	// Can also add entries each of the attribute captions used in this tab.
 	// Note these do not have LANG_ prefixes.
@@ -44,7 +44,7 @@ $custom_terms = array_merge($custom_terms, array(
 
 	'LANG_Tab_place' => 'Where Was It?',
 	'LANG_Tab_Instructions_place' => '<strong>Place Selection</strong><br/>Please either enter the spatial reference of the observation if you know it, or click on the map to specify the place as accurately as you can.',
-	
+
 	'LANG_Other_Information_Tab' => 'Other Information',
 	'LANG_Tab_Instructions _otherinformation'=>'<strong>Other Information</strong><br/>Please tell us when the observation took place, the biotope, whether a voucher specimen was taken (in the case where identification was difficult, to allow verification), and whether the observation details have been completed.',
 

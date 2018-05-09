@@ -21,7 +21,7 @@
  * @subpackage PrebuiltForms
  * @author Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link http://code.google.com/p/indicia/
+ * @link https://github.com/indicia-team/warehouse/
  */
 
 if (!empty($_GET['table']) && $_GET['table'] === 'sample' && !empty($_GET['id'])) {

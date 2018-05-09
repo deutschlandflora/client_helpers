@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 include_once 'dynamic.en.php';
@@ -30,13 +30,13 @@ $custom_terms = array_merge($custom_terms, array(
   'LANG_Add_Sample' => 'Add New Sample',
   'LANG_Add_Sample_Single' => 'Add Single Occurrence',
   'LANG_Add_Sample_Grid' => 'Add List of Occurrences',
-  'LANG_Dive_Start' => 'Dive Start Position',  
-  'LANG_Dive_End' => 'Dive End Position', 
-    
-  'LANG_Tab_aboutyou' => 'About You',      
+  'LANG_Dive_Start' => 'Dive Start Position',
+  'LANG_Dive_End' => 'Dive End Position',
+
+  'LANG_Tab_aboutyou' => 'About You',
   'LANG_Tab_Instructions_aboutyou' => '<strong>About You</strong><br/>Please tell us about yourself first.',
   // Can also add entries each of the attribute captions used in this tab.
-  // Note these do not have LANG_ prefixes. 
+  // Note these do not have LANG_ prefixes.
   'LANG_Tab_species' => 'What Did You See?',
   'LANG_Tab_Instructions_species' => '<strong>Species Selection</strong><br/>Please click on all the species that you observed, enter the relevant additional information, and then move on to the next stage.',
   // The species and presence column titles in the grid may be set by adding entries for 'species_checklist.species'

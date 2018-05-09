@@ -17,7 +17,7 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link  http://code.google.com/p/indicia/
+ * @link  https://github.com/indicia-team/warehouse/
  */
 
 /**
@@ -232,7 +232,7 @@ function get_user_profile_hidden_inputs(&$attributes, $args, $exists, $readAuth)
       }
 
       if (isset($args['nameShow']) && $args['nameShow'] == true) {
-        // Show the attribute with default value providing we aren't editing, in which case the value should be collected 
+        // Show the attribute with default value providing we aren't editing, in which case the value should be collected
         // from the saved data (even if that data is blank) so we don't want to overwrite it
         if (!isset($attribute['default']) && !isset($_GET['sample_id']) && !isset($_GET['occurrence_id']))
           $attribute['default'] = $value;
@@ -253,7 +253,7 @@ function get_user_profile_hidden_inputs(&$attributes, $args, $exists, $readAuth)
     }
     elseif (strcasecmp($attribute['untranslatedCaption'], 'email') == 0) {
       if (isset($args['emailShow']) && $args['emailShow'] == true) {
-        // Show the email attribute with default value providing we aren't editing, in which case the value should be collected 
+        // Show the email attribute with default value providing we aren't editing, in which case the value should be collected
         // from the saved data (even if that data is blank) so we don't want to overwrite it
         if (!isset($attribute['default']) && !isset($_GET['sample_id']) && !isset($_GET['occurrence_id']))
           $attribute['default'] = hostsite_get_user_field('mail');

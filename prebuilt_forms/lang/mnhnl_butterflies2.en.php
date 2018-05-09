@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 global $custom_terms;
@@ -64,7 +64,7 @@ $custom_terms = array(
 	'LANG_LocModTool_ParentLabel'=>'New site square',
 
 	'LANG_Data_Download' => 'These reports provide details of the data entered in the survey.',
-	
+
 	'LANG_TooFewPoints' => 'There are too few points in this polygon - there must be at least 3.',
 	'LANG_TooFewLinePoints' => 'There are too few points in this line - there must be at least 2.',
 	'LANG_CentreOutsideParent'=>'Warning: the centre of your new site is outside the square.',
@@ -122,7 +122,7 @@ $custom_terms = array(
 	'LANG_Location_Name' => 'Site Name',
 	'LANG_Georef_Label' => 'Search for Place on Map',
 	// The search button may be changed by adding an entry for 'search'
-	
+
 	'LANG_Date' => 'Date',
 	'LANG_Save' => 'Save',
 	'LANG_Submit' => 'Save',

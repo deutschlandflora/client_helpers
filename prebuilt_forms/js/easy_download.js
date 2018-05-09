@@ -16,9 +16,9 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link    http://code.google.com/p/indicia/
+ * @link    https://github.com/indicia-team/warehouse/
  */
- 
+
 jQuery(document).ready(function ($) {
   function setVisibleSurveyControl() {
     // check first option if none checked
@@ -43,9 +43,9 @@ jQuery(document).ready(function ($) {
         break;
     }
   }
-  
+
   // toggle between the surveys available for the 2 options (my data, or data I am an expert for)
   $('#user-filter\\:0, #user-filter\\:1, #user-filter\\:2').click(setVisibleSurveyControl);
-  
+
   setVisibleSurveyControl();
 });

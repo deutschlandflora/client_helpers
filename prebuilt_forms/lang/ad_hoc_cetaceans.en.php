@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 global $custom_terms;
@@ -35,5 +35,5 @@ $custom_terms = array(
   'Instructions for any other info' => 'Also use this box to tell us about any unidentified or rare species seen.',
   'happy for contact' => 'In some cases we may wish to contact you to confirm your sighting. Please tick this box if you are happy for this to happen',
   'Abundance count' => 'Number seen'
-  
+
 );

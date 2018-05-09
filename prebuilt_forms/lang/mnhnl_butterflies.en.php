@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 global $custom_terms;
@@ -36,7 +36,7 @@ $custom_terms = array(
 	'LANG_Data_Download' => 'These reports provide details of the data entered in the survey.',
 	'LANG_Trailer_Text' => "Coordination of the biodiversity monitoring programme in Luxembourg: <a href='http://www.crpgl.lu' target='_blank'>Centre de Recherche Public - Gabriel Lippmann</a> (Département Environnement et Agro-biotechnologies) & <a href='http://www.environnement.public.lu' target='_blank'>Ministère du Développement durable et des Infrastructures</a> (Département de l'environnement)",
 
-	'LANG_Tab_aboutyou' => 'About You',      
+	'LANG_Tab_aboutyou' => 'About You',
 	'LANG_Tab_Instructions_aboutyou' => '<strong>About You</strong><br/>Please tell us about yourself first.',
 	// Can also add entries each of the attribute captions used in this tab.
 	// Note these do not have LANG_ prefixes.
@@ -54,7 +54,7 @@ $custom_terms = array(
 	'LANG_Location_Name' => 'Site Name',
 	'LANG_Georef_Label' => 'Search for Place on Map',
 	// The search button may be changed by adding an entry for 'search'
-	
+
 	'LANG_Other_Information_Tab' => 'Other Information',
 	'LANG_Tab_Instructions _otherinformation'=>'<strong>Other Information</strong><br/>Please tell us when the observation took place, the biotope, whether a voucher specimen was taken (in the case where identification was difficult, to allow verification), and whether the observation details have been completed.',
 	'LANG_Date' => 'Date',
@@ -90,6 +90,6 @@ $custom_terms = array(
 	'transectgrid:bumpf2' => 'Note: when a species record is associated with multiple codes for the same grid, please consider this order of priority (1) "X", (2) "/" and (3) "O".',
 	'next step'=>'Next step',
 	'prev step'=>'Previous step'
-	
+
 
 );

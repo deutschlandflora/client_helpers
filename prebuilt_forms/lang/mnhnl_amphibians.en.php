@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 // Translation strings for when in Amphibian mode, on top of reptile ones.
@@ -66,6 +66,6 @@ $custom_term_overrides[] = array(
 	,'LANG_PositionOutsideCommune_5A' => "The position you have chosen is outside the set of allowable Communes, but the closest is SHAPE. The Commune field will be set to SHAPE."
 	,'LANG_PositionOutsideCommune_6' => "The position you have chosen is outside the set of allowable Communes, but the closest is SHAPE, which is also the currently selected value in the Commune field. Select 'OK' if you wish to keep SHAPE. (If you choose 'Cancel', the Commune will be cleared, and you will not be able to save this location until you change it so it has a valid Commune field)"
 	,'LANG_PositionOutsideCommune_7' => "The position you have chosen is outside the set of allowable Communes, but the closest is SHAPE. This differs from the currently selected value in the Commune field of OLD. Select 'OK' if you wish to change the value to SHAPE. If you choose 'Cancel', the Commune will be left as its current value of OLD."
-		
+
 	);
 ?>

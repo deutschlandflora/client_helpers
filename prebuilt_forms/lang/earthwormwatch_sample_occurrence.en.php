@@ -16,7 +16,7 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 include_once 'dynamic.en.php';
@@ -31,7 +31,7 @@ $custom_terms = array_merge($custom_terms, array(
   'LANG_Add_Sample_Single' => 'Add Single Occurrence',
   'LANG_Add_Sample_Grid' => 'Add List of Occurrences',
 
-  'LANG_Tab_aboutyou' => 'About You',      
+  'LANG_Tab_aboutyou' => 'About You',
   'LANG_Tab_Instructions_aboutyou' => '<strong>About You</strong><br/>Please tell us about yourself first.',
   'LANG_Tab_species' => 'What Did You See?',
   'LANG_Tab_Instructions_species' => '<strong>Species Selection</strong><br/>Please click on all the species that you observed, enter the relevant additional information, and then move on to the next stage.',

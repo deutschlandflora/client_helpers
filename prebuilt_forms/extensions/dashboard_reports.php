@@ -17,15 +17,15 @@
  * @subpackage PrebuiltForms
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
- 
+
 /**
  * Extension class that supplies new controls to support reporting dashboards.
  */
 class extension_dashboard_reports {
 
-  /** 
+  /**
    * A report showing a chart of verification progress per week.
    */
   public static function verification_by_week_chart($auth, $args, $tabalias, $options, $path) {
@@ -52,8 +52,8 @@ class extension_dashboard_reports {
     );
     return report_helper::report_chart($reportOptions);
   }
-  
-  /** 
+
+  /**
    * A report showing a chart of incoming records per week.
    */
   public static function records_by_week_chart($auth, $args, $tabalias, $options, $path) {

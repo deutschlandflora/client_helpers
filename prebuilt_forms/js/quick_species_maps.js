@@ -16,13 +16,13 @@
  * @subpackage PrebuiltForms
  * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link    http://code.google.com/p/indicia/
+ * @link    https://github.com/indicia-team/warehouse/
  */
 
 var grid_load;
 
 (function ($) {
-  
+
 var layers=[];
 
 /**
@@ -41,7 +41,7 @@ grid_load = function() {
 
 $(document).ready(function () {
   var sequence=0, remove, removeIdx, img, title, key, filter, sld;
-  
+
   /**
    * Catch clicks on the grid icons, to add layers for the species to the map.
    */
@@ -81,7 +81,7 @@ $(document).ready(function () {
         title += ' - ' + indiciaData.indiciaSpeciesLayer.myRecords;
       }
       sld=indiciaData.indiciaSpeciesLayer.slds[sequence % indiciaData.indiciaSpeciesLayer.slds.length];
-      var layer = new OpenLayers.Layer.WMS(title, indiciaData.indiciaSpeciesLayer.wmsUrl, 
+      var layer = new OpenLayers.Layer.WMS(title, indiciaData.indiciaSpeciesLayer.wmsUrl,
           {layers: indiciaData.indiciaSpeciesLayer.featureType, transparent: true, CQL_FILTER: filter, STYLES: sld},
           {isBaseLayer: false, sphericalMercator: true, singleTile: true, opacity: 0.5});
       indiciaData.mapdiv.map.addLayer(layer);

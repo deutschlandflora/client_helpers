@@ -16,13 +16,13 @@
  * @package	Client
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
- 
+
 /**
  * A simple script to return the parameters form for an input prebuilt form name.
  */
- 
+
 // Use iform to load the helpers, so it can set the configuration variables if running in Drupal
 require_once "form_helper.php";
 // Let params forms internationalise.

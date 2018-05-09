@@ -16,7 +16,7 @@
  * @package  Client
  * @author   Indicia Team
  * @license  http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link     http://code.google.com/p/indicia/
+ * @link     https://github.com/indicia-team/warehouse/
  */
 /**
  * Link in other required php files.
@@ -459,7 +459,7 @@ NEWFUNCS;
               duplicateStore[duplicateStoreIndex] = select.value;
               duplicateStoreIndex++;
             }
-             
+
           }
           valueStore[valueStoreIndex] = select.value;
           valueStoreIndex++;
@@ -1016,9 +1016,9 @@ NEWFUNCS;
       $checked = ($itWasSaved[$column] == 1 || $rememberAll) ? ' checked="checked"' : '';
       $r .= <<<TD
 <td class="centre">
-<input type="checkbox" name="$inputName" class="rememberField" id="$inputName" value="1"$checked 
-  onclick="if (!this.checked) { $('#RememberAll').removeAttr('checked'); }" 
-  title="If checked, your selection for this particular column will be saved and automatically selected during future 
+<input type="checkbox" name="$inputName" class="rememberField" id="$inputName" value="1"$checked
+  onclick="if (!this.checked) { $('#RememberAll').removeAttr('checked'); }"
+  title="If checked, your selection for this particular column will be saved and automatically selected during future
     imports. Any alterations you make to this default selection in the future will also be remembered until you deselect
     the checkbox.">
 </td>

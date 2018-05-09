@@ -17,7 +17,7 @@
  * @subpackage PrebuiltForms
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 
 /*
@@ -31,8 +31,8 @@ if (isset($_REQUEST['personName'])&&isset($_REQUEST['subject'])&&isset($_REQUEST
   $emailTo = $_REQUEST['emailTo'];
   $locationName = $_REQUEST['locationName'];
   //Replacements for the person's name and the location name tags in the message with the real location and person name.
-  $message = str_replace("{person_name}", $personName, $message); 
-  $message = str_replace("{location_name}", $locationName, $message); 
+  $message = str_replace("{person_name}", $personName, $message);
+  $message = str_replace("{location_name}", $locationName, $message);
 
   $sent = mail($emailTo, $subject, wordwrap($message, 70));
   if ($sent) {

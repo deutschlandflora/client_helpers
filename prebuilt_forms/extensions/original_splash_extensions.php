@@ -17,22 +17,22 @@
  * @subpackage PrebuiltForms
  * @author	Indicia Team
  * @license	http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link 	http://code.google.com/p/indicia/
+ * @link 	https://github.com/indicia-team/warehouse/
  */
 /**
  * Extension class that supplies new controls to support the original Splash project.
  */
 class extension_original_splash_extensions {
-  
-  /* 
+
+  /*
    * If no options are supplied then the only validation applied is a check to make sure the plot is filled in.
-   * 
+   *
    * $options Options array with the following possibilities:<ul>
    * <li><b>treeCountMode</b><br/>
    * If true then an additional check is made to make sure at least 1 tree has been entered.</li>
    * <li><b>treeGridRefAndEpiphyteMode</b><br/>
    * If true then all validation applies</li>
-   * 
+   *
    * Validator for Splash Epiphyte survey input forms, validates the following:
    * - That a plot is filled in.
    * - The details of at least one tree have been entered (treeCountMode and treeGridRefAndEpiphyteMode)
@@ -46,7 +46,7 @@ class extension_original_splash_extensions {
                           This should be a comma seperated list of attribute ids that hold the Epiphyte counts for trees.');
       return '';
     }
-    
+
     //The validator that makes sure the user hasn't entered a Epiphyte presence for a tree that doesn't exist works as follows.
     //- Cycle through each the occurrence attribute that holds the presence boolean for trees that haven't been entered on the trees grid (taking into account trees can be deleted)
     //- Use jQuery to cycle through each instance of the attribute on the page (effectively check all rows on both grids)
@@ -54,7 +54,7 @@ class extension_original_splash_extensions {
     //if the error count is above 0 then we know there are problems on the page
     data_entry_helper::$javascript .= "
     $('<span class=\"deh-required\">*</span>').insertAfter('.scGridRef\\\\/Accuracy');
-    $('#entry_form').submit(function() {     
+    $('#entry_form').submit(function() {
       if ($('#imp-location').val()==='<Please select>'||$('#squares-select-list').val()==='<Please select>'||
           $('#imp-location').val()===''||$('#squares-select-list').val()==='') {
         alert('Please select a plot before submitting.');
@@ -62,7 +62,7 @@ class extension_original_splash_extensions {
       }";
     if ((!empty($options['treeCountMode']) && $options['treeCountMode']===true)||
         (!empty($options['treeGridRefAndEpiphyteMode']) && $options['treeGridRefAndEpiphyteMode']===true)) {
-      data_entry_helper::$javascript .= "    
+      data_entry_helper::$javascript .= "
       //Take 1 off because there is an empty row on the grid.
       var treesCount = $('#trees').find('.scTaxonCell:not([disabled])').length - 1;
       if (treesCount < 1) {
@@ -88,11 +88,11 @@ class extension_original_splash_extensions {
     }
     data_entry_helper::$javascript .= "
     });";
-    
+
     if (!empty($options['treeGridRefAndEpiphyteMode']) && $options['treeGridRefAndEpiphyteMode']===true) {
     data_entry_helper::$javascript .= "
     function runValidateOnEpiphyteGrid(treesCount,treeOccurrenceAttrIds) {
-      var treeIdxToCheck; 
+      var treeIdxToCheck;
       var issueCount=0;
       for (treeIdxToCheck=treesCount; treeIdxToCheck<treeOccurrenceAttrIds.length;treeIdxToCheck++) {
         var result = $('[id*=occAttr\\\\:'+treeOccurrenceAttrIds[treeIdxToCheck]+']').each(function(){
@@ -103,18 +103,18 @@ class extension_original_splash_extensions {
             issueCount++;
           }
         });
-      }  
+      }
       return issueCount;
     }
     ";
     }
   }
-  
+
   /**
    * Get a location select control pair, first the user must select a square then a plot associated with a square.
    * Only squares that are associated with the user and also have plots are displayed
    * When a plot is selected, then a mini report about the plot is displayed.
-   * 
+   *
    * $options Options array with the following possibilities:<ul>
    * <li><b>coreSquareLocationTypeId</b><br/>
    * The location type id of a core square</li>
@@ -180,7 +180,7 @@ class extension_original_splash_extensions {
     } else {
       //Convert the raw data in the report into array format suitable for the Select drop-down to user (an array of ID=>Name pairs)
       foreach($rawData as $rawRow) {
-          $squaresData[$rawRow['id']]=$rawRow['name'];        
+          $squaresData[$rawRow['id']]=$rawRow['name'];
       }
       //Need a report to collect the square to default the Location Select to in edit mode, as this is not stored against the sample directly.
       if (!empty($_GET['sample_id'])) {
@@ -199,7 +199,7 @@ class extension_original_splash_extensions {
         'fieldname'=> 'squares-select-list',
         'label' => lang::get('Select a Square'),
         'helpText' => lang::get('Select a square to input data for before selecting a plot.'),
-        'lookupValues' => $squaresData, 
+        'lookupValues' => $squaresData,
         'default' => $defaultSquareSelection
       ));
       //This code is same as standard lookup control
@@ -207,7 +207,7 @@ class extension_original_splash_extensions {
         foreach ($options['extraParams'] as $key => &$value)
           $value = apply_user_replacements($value);
         $options['extraParams'] = array_merge($auth['read'], $options['extraParams']);
-      } else 
+      } else
         $options['extraParams'] = array_merge($auth['read']);
       if (empty($options['reportProvidesOrderBy'])||$options['reportProvidesOrderBy']==0) {
         $options['extraParams']['orderby'] = 'name';
@@ -232,7 +232,7 @@ class extension_original_splash_extensions {
       return $r;
     }
   }
-  
+
   /*
    * Display a mini report when the user selects a plot
    */
@@ -242,16 +242,16 @@ class extension_original_splash_extensions {
       'linkOnly'=>'true',
       'dataSource'=>'reports_for_prebuilt_forms/Splash/get_square_details_for_square_id',
       'readAuth'=>$auth['read']
-    );  
+    );
     //Report that will return the type of the square selected by the user
     data_entry_helper::$javascript .= "indiciaData.squareReportRequest='".
        report_helper::get_report_data($reportOptions)."';\n";
-    
+
     $reportOptions = array(
       'linkOnly'=>'true',
       'dataSource'=>'reports_for_prebuilt_forms/Splash/original_splash_site_only/get_plot_details',
       'readAuth'=>$auth['read']
-    );  
+    );
     data_entry_helper::$javascript .= "indiciaData.plotReportRequest='".
        report_helper::get_report_data($reportOptions)."';\n";
     //The html to place the data into using jQuery
@@ -270,7 +270,7 @@ class extension_original_splash_extensions {
         <span><b>% Ash cover: </b></span><span id='ash-cover-value'></span></br>
       </div>
     </div></br>";
-    //When the square or plot is changed or the page is loaded then get the data about the square/plot from reports and then 
+    //When the square or plot is changed or the page is loaded then get the data about the square/plot from reports and then
     //place it into the mini report html template using jQuery.
     data_entry_helper::$javascript .= "
     $('#squares-select-list').ready(function() {
@@ -321,7 +321,7 @@ class extension_original_splash_extensions {
         $.getJSON(reportRequest,
           null,
           function(response, textStatus, jqXHR) {
-            $.each(response, function (idx, obj) {         
+            $.each(response, function (idx, obj) {
               if (obj.type) {
                 $('#plot-type-value').text(obj.type);
               } else {
@@ -362,14 +362,14 @@ class extension_original_splash_extensions {
         );
       }
     }";
-    
+
     return $htmlTemplate;
   }
   /*
    * When creating a plot, we need the plot location record to hold its parent square in location.parent_id.
-   * To do this, the calling page provides the square id in the $_GET which we then place in a hidden field on the page to be 
+   * To do this, the calling page provides the square id in the $_GET which we then place in a hidden field on the page to be
    * processed during submission.
-   * 
+   *
    */
   public static function insert_parent_square_id_into_location_record($auth, $args, $tabalias, $options, $path) {
     //Don't run the code unless the page in in add mode.
@@ -381,7 +381,7 @@ class extension_original_splash_extensions {
       return $hiddenField;
     }
   }
-  
+
   /*
    * This function performs two tasks,
    * 1. In view mode (summary mode) it allows the page to be displayed with read-only data.
@@ -398,11 +398,11 @@ class extension_original_splash_extensions {
     data_entry_helper::$javascript .= "$('#entry_form').submit(function() { $('#location\\\\:name').val($('#imp-sref').val());});\n";
     //Make the page read-only in summary mode
     if (!empty($_GET['summary_mode']) && $_GET['summary_mode']==true) {
-      data_entry_helper::$javascript .= "$('.read-only-capable').find('input, textarea, text, button, select').attr('disabled','disabled');\n"; 
-      data_entry_helper::$javascript .= "$('.page-notice, .indicia-button').hide();\n"; 
+      data_entry_helper::$javascript .= "$('.read-only-capable').find('input, textarea, text, button, select').attr('disabled','disabled');\n";
+      data_entry_helper::$javascript .= "$('.page-notice, .indicia-button').hide();\n";
     }
   }
-  
+
   /*
    * When the plot details page is in edit/view mode we display a list of species recorded against the plot.
    */
@@ -425,7 +425,7 @@ class extension_original_splash_extensions {
       ));
     }
   }
-  
+
   /*
    * When the plot details or square/user administration pages are displayed then we need to display the name of the square.
    * As the square display name is made from the name of the square plus its vice counties, then we need to collect this information from a report.
@@ -436,40 +436,40 @@ class extension_original_splash_extensions {
       $reportOptions = array(
         'dataSource'=>'reports_for_prebuilt_forms/Splash/get_square_name_for_plot_id',
         'readAuth'=>$auth['read'],
-        'extraParams' => array('website_id'=>$args['website_id'], 
-            'vice_county_location_attribute_id'=>$options['viceCountyLocationAttributeId'], 
+        'extraParams' => array('website_id'=>$args['website_id'],
+            'vice_county_location_attribute_id'=>$options['viceCountyLocationAttributeId'],
             'no_vice_county_found_message'=>$options['noViceCountyFoundMessage'],
             'plot_id'=>$_GET['location_id']),
         'valueField'=>'id',
         'captionField'=>'name'
       );
     }
-    //The square/user admin page use's dynamic-location_id as its parameter. Only perform code for this 
+    //The square/user admin page use's dynamic-location_id as its parameter. Only perform code for this
     //page if this is present.
     //In add mode, the Plot Details page is given its parent square in the parent_square_id parameter, so use this to get the parent square name.
     if (!empty($_GET['dynamic-location_id'])||!empty($_GET['parent_square_id'])) {
       $reportOptions = array(
         'dataSource'=>'reports_for_prebuilt_forms/Splash/get_square_details_for_square_id',
         'readAuth'=>$auth['read'],
-        'extraParams' => array('website_id'=>$args['website_id'], 
-            'vice_county_location_attribute_id'=>$options['viceCountyLocationAttributeId'], 
+        'extraParams' => array('website_id'=>$args['website_id'],
+            'vice_county_location_attribute_id'=>$options['viceCountyLocationAttributeId'],
             'no_vice_county_found_message'=>$options['noViceCountyFoundMessage']),
         'valueField'=>'id',
         'captionField'=>'name'
       );
-      if (!empty($_GET['dynamic-location_id'])) 
+      if (!empty($_GET['dynamic-location_id']))
         $reportOptions['extraParams']['square_id']= $_GET['dynamic-location_id'];
-      if (!empty($_GET['parent_square_id'])) 
+      if (!empty($_GET['parent_square_id']))
         $reportOptions['extraParams']['square_id']= $_GET['parent_square_id'];
     }
-    
+
     if (!empty($reportOptions)) {
       $squareNameData = data_entry_helper::get_report_data($reportOptions);
       if (!empty($squareNameData[0]['name']))
         return '<div><label>Square name:</label>'.$squareNameData[0]['name'].'</div>';
     }
   }
-  
+
   /*
    * When the user clicks on the map on the plot details page, for most plot types we calculate a plot square on the map where the south-west corner is the clicked point.
    * For two of the plot types, the user draws a free shape using the polygon drawing tool
@@ -482,14 +482,14 @@ class extension_original_splash_extensions {
    * Comma separated list of plot names for which the user will use the polygon drawing tool for (rather than an auto-generated square).
    * Note: for this option to work, the drawPolygon tool must be available on the map.</li>
    * </ul>
-   * 
+   *
    */
   public static function draw_map_plot($auth, $args, $tabalias, $options, $path) {
     if (empty($options['squareSizes'])) {
       drupal_set_message('Please fill in the @squareSizes option for the draw_map_plot control');
       return '';
     }
-    iform_load_helpers(array('map_helper')); 
+    iform_load_helpers(array('map_helper'));
     //Some Splash plot types use the polygon tool to draw the plot as any shape, specify the plot types and pass to Javascript.
     if (!empty($options['freeDrawPlotTypeNames']))
       map_helper::$javascript .= "indiciaData.freeDrawPlotTypeNames=".json_encode(explode(',',$options['freeDrawPlotTypeNames'])).";";
@@ -520,32 +520,32 @@ class extension_original_splash_extensions {
        clear_map_features();
        setup_plot_type();
     });
-    
+
     //When plot type is changed or screen is loaded then setup whether we are drawing square plots or manually drawing them to the screen.
     function setup_plot_type() {
       indiciaData.clickMiddleOfPlot=false;
       if ($('#location\\\\:location_type_id').val()) {
         indiciaData.plotWidthLength = indiciaData.squareSizes[$('#location\\\\:location_type_id').val()][0]+ ',' + indiciaData.squareSizes[$('#location\\\\:location_type_id').val()][1];
       }
-      if ($('#location\\\\:location_type_id option:selected').text() && inArray($('#location\\\\:location_type_id option:selected').text(),indiciaData.freeDrawPlotTypeNames)) {  
+      if ($('#location\\\\:location_type_id option:selected').text() && inArray($('#location\\\\:location_type_id option:selected').text(),indiciaData.freeDrawPlotTypeNames)) {
         free_draw_plot_select();
       } else {
         square_draw_plot_select();
       }
     };
-    
+
     function free_draw_plot_select() {
       show_polygon_line_tool(true);
       indiciaData.mapdiv.settings.clickForPlot=false;
-      indiciaData.mapdiv.settings.click_zoom=false;  
+      indiciaData.mapdiv.settings.click_zoom=false;
     }
-    
+
     function square_draw_plot_select() {
       show_polygon_line_tool(false);
       indiciaData.mapdiv.settings.clickForPlot=true;
-      indiciaData.mapdiv.settings.click_zoom=true;  
+      indiciaData.mapdiv.settings.click_zoom=true;
     }
-    
+
     //When doing things like changing plot type, we need to clear the map
     function clear_map_features() {
       var mapLayers = indiciaData.mapdiv.map.layers;
@@ -556,7 +556,7 @@ class extension_original_splash_extensions {
       };
       $('#imp-boundary-geom').val('');
     }
-    
+
     //Show polygon tool in manual draw mode, else hide it
     function show_polygon_line_tool(show) {
       if (show===true) {
@@ -570,7 +570,7 @@ class extension_original_splash_extensions {
         $('.olControlDrawFeaturePolygonItemInactive').hide();
         $('.olControlDrawFeaturePathItemInactive').hide();
       }
-     
+
       //Activate/deactivate the map icons when changing plot type. For instance if the draw tool is selected and then hidden,
       //it mkes sense to auto-select the point tool
       $.each(indiciaData.mapdiv.map.controls, function(idx, control) {
@@ -582,7 +582,7 @@ class extension_original_splash_extensions {
         }
       });
     }
-    
+
     /*
      * Destroy features version of removeAllFeatures function. Once destroyed features cannot be added back to the layer.
      */
