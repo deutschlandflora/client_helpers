@@ -7454,6 +7454,7 @@ HTML;
   }
 
   private static function internalOutputAttribute($item, $options) {
+    global $indicia_templates;
     $options = array_merge(array(
       'extraParams' => array()
     ), $options);
@@ -7504,17 +7505,24 @@ HTML;
       case 'Float':
       case 'F':
         $ctrl = empty($ctrl) ? 'text_input' : $ctrl;
+        $output = self::$ctrl($attrOptions);
         if (isset($item['allow_ranges']) && $item['allow_ranges'] === 't') {
+          // An output attribute might be used for a genuine record value, or
+          // the default value in the attribute's configuration - the pattern
+          // of the field name differs for each.
+          $fieldname = $attrOptions['fieldname'] === 'default_value' ?
+            'default_upper_value' : "$attrOptions[fieldname]:upper";
           $toAttrOptions = array_merge($attrOptions, [
-            'label' => NULL,
-            'fieldname' => "$attrOptions[fieldname]:upper",
-            'id' => "$attrOptions[fieldname]:upper",
+            'label' => 'to',
+            'fieldname' => $fieldname,
+            'id' => $fieldname,
             'default' => empty($item['defaultUpper']) ? '' : $item['defaultUpper'],
             'controlWrapTemplate' => 'justControl',
           ]);
-          $attrOptions['afterControl'] = ' to ' . self::$ctrl($toAttrOptions);
+          $toControl = self::$ctrl($toAttrOptions);
+          $output = str_replace(['{col-1}', '{col-2}'], [$output, $toControl], $indicia_templates['two-col-50']);
         }
-        $output = self::$ctrl($attrOptions);
+
         break;
 
       case 'Boolean':
