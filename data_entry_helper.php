@@ -3427,8 +3427,9 @@ JS;
               $loadedCtrlFieldName = str_replace('-idx-:', $loadedTxIdx.':'.$existingRecordId, $attributes[$attrId]['fieldname']);
               $ctrlId = str_replace('-idx-:', "$options[id]-$txIdx:$existingRecordId", $attributes[$attrId]['fieldname']);
             }
-            if (isset(self::$entity_to_load[$loadedCtrlFieldName]))
+            if (isset(self::$entity_to_load[$loadedCtrlFieldName])) {
               $existing_value = self::$entity_to_load[$loadedCtrlFieldName];
+            }
           } else {
             // no existing record, so use a default control ID which excludes the existing record ID.
             $ctrlId = str_replace('-idx-', "$options[id]-$txIdx", $attributes[$attrId]['fieldname']);
@@ -3440,11 +3441,10 @@ JS;
           }
           // inject the field name into the control HTML
           $oc = str_replace('{fieldname}', $ctrlId, $control);
-          if ($existing_value<>"") {
+          if ($existing_value <> "") {
             // For select controls, specify which option is selected from the existing value
-            if (substr(trim($oc), 0, 7)==='<select') {
-              $oc = str_replace('value="'.$existing_value.'"',
-                'value="'.$existing_value.'" selected="selected"', $oc);
+            if (strpos($oc, '<select') !== FALSE) {
+             // $oc = str_replace("value=\"$existing_value\"", "value=\"$existing_value\" selected=\"selected\"", $oc);
             } else if(strpos($oc, 'type="checkbox"') !== false) {
               if($existing_value=="1")
                 $oc = str_replace('type="checkbox"', 'type="checkbox" checked="checked"', $oc);
@@ -3558,20 +3558,12 @@ JS;
       // If the lookupListId parameter is specified then the user is able to add extra rows to the grid,
       // selecting the species from this list. Add the required controls for this.
       if (!empty($options['lookupListId'])) {
-        // Javascript to add further rows to the grid
-        if (!empty(parent::$warehouse_proxy))
-          $url = parent::$warehouse_proxy."index.php/services/data";
-        else
-          $url = parent::$base_url."index.php/services/data";
         self::$javascript .= "if (typeof indiciaData.speciesGrid==='undefined') {indiciaData.speciesGrid={};}\n";
         self::$javascript .= "indiciaData.speciesGrid['$options[id]']={};\n";
         self::$javascript .= "indiciaData.speciesGrid['$options[id]'].numValues=".(!empty($options['numValues']) ? $options['numValues'] : 20) . ";\n";
         self::$javascript .= "indiciaData.speciesGrid['$options[id]'].selectMode=".(!empty($options['selectMode']) && $options['selectMode'] ? 'true' : 'false') . ";\n";
         self::$javascript .= "indiciaData.speciesGrid['$options[id]'].matchContains=".(!empty($options['matchContains']) && $options['matchContains'] ? 'true' : 'false') . ";\n";
-        self::$javascript .= "addRowToGrid('$url', '".
-          $options['id']."', '".$options['lookupListId']."', {'auth_token' : '".
-          $options['readAuth']['auth_token']."', 'nonce' : '".$options['readAuth']['nonce']."'},".
-          " formatter);\r\n";
+        self::$javascript .= "indiciaFns.addRowToGrid('$options[id]', '$options[lookupListId]');\r\n";
       }
       // If options contain a help text, output it at the end if that is the preferred position
       $options['helpTextClass'] = (isset($options['helpTextClass'])) ? $options['helpTextClass'] : 'helpTextLeft';
@@ -4223,8 +4215,12 @@ JS;
    * @return array The taxon list to use in the grid.
    */
   public static function get_species_checklist_taxa_list($options, &$taxonRows) {
-    // Get the list of species that are always added to the grid, by first building a filter
-    if (preg_match('/^(preferred_name|preferred_taxon|taxon_meaning_id|taxa_taxon_list_id|taxon_group|external_key|id)$/', $options['taxonFilterField']))  {
+    // Get the list of species that are always added to the grid, by first
+    // building a filter or using preloaded ones
+    if (!empty($options['preloadTaxa'])) {
+      $options['extraParams']['taxa_taxon_list_id'] = json_encode($options['preloadTaxa']);
+    }
+    elseif (preg_match('/^(preferred_name|preferred_taxon|taxon_meaning_id|taxa_taxon_list_id|taxon_group|external_key|id)$/', $options['taxonFilterField']))  {
       if ($options['taxonFilterField'] === 'preferred_name') {
         $options['taxonFilterField'] = 'preferred_taxon';
       }
@@ -4397,14 +4393,26 @@ JS;
   }
 
   /**
-   * Internal function to prepare the list of occurrence attribute columns for a species_checklist control.
-   * @param array $options Options array as passed to the species checklist grid control.
-   * @param array $attributes Array of custom attributes as loaded from the database.
-   * @param array $occAttrControls Empty array which will be populated with the controls required for each
-   * custom attribute. This copy of the control applies for new data and is populated with defaults.
-   * @param array $occAttrControlsExisting Empty array which will be populated with the controls required for each
-   * custom attribute. This copy of the control applies for existing data and is not populated with defaults.
-   * @param array $occAttrCaptions Empty array which will be populated with the captions for each custom attribute.
+   * Prepare attributes for the species checklist control.
+   *
+   * Internal function to prepare the list of occurrence attribute columns for
+   * a species_checklist control.
+   *
+   * @param array $options
+   *   Options array as passed to the species checklist grid control.
+   * @param array $attributes
+   *   Array of custom attributes as loaded from the database.
+   * @param array $occAttrControls
+   *   Empty array which will be populated with the controls required for each
+   *   custom attribute. This copy of the control applies for new data and is
+   *   populated with defaults.
+   * @param array $occAttrControlsExisting
+   *   Empty array which will be populated with the controls required for each
+   *   custom attribute. This copy of the control applies for existing data and
+   *   is not populated with defaults.
+   * @param array $occAttrCaptions
+   *   Empty array which will be populated with the captions for each custom
+   *   attribute.
    */
   public static function species_checklist_prepare_attributes($options, $attributes, &$occAttrControls, &$occAttrControlsExisting, &$occAttrCaptions) {
     $idx=0;
@@ -7325,15 +7333,15 @@ HTML;
    */
   private static function getTranslatedAttrCaption(array $attr) {
     require_once 'prebuilt_forms/includes/language_utils.php';
-    $language = iform_lang_iso_639_2(hostsite_get_user_field('language'));
     if (!empty($attr['caption_i18n'])) {
-      $otherLanguages = json_decode($attr['caption_i18n'], TRUE);
-      if (isset($otherLanguages[$language])) {
-        return $otherLanguages[$language];
+      if (function_exists('hostsite_get_user_field')) {
+        $otherLanguages = json_decode($attr['caption_i18n'], TRUE);
+        $language = iform_lang_iso_639_2(hostsite_get_user_field('language'));
+        if (isset($otherLanguages[$language])) {
+          return $otherLanguages[$language];
+        }
       }
-      else {
-        return lang::get($attr['caption']);
-      }
+      return lang::get($attr['caption']);
     }
     else {
       return lang::get($attr['caption']);
@@ -7597,18 +7605,19 @@ HTML;
             }
           }
         }
-        if($ctrl=='autocomplete' && isset($attrOptions['default'])){
-          // two options: we could be using the id or the meaning_id.
-          if($lookUpKey=='id'){
+        if ($ctrl === 'autocomplete' && isset($attrOptions['default'])) {
+          // Two options: we could be using the id or the meaning_id.
+          if ($lookUpKey === 'id' && isset($item['displayValue'])) {
             $attrOptions['defaultCaption'] = $item['displayValue'];
           } else {
             $termOptions = array(
               'table'=>'termlists_term',
-              'extraParams'=> $options['extraParams'] + $dataSvcParams);
-            $termOptions['extraParams']['meaning_id']=$attrOptions['default'];
+              'extraParams'=> $options['extraParams'] + ['termlist_id' => $dataSvcParams['termlist_id']]);
+            $termOptions['extraParams'][$lookUpKey]=$attrOptions['default'];
             $response = self::get_population_data($termOptions);
-            if(count($response)>0)
+            if (count($response) > 0) {
               $attrOptions['defaultCaption'] = $response[0]['term'];
+            }
           }
         }
         $output .= call_user_func(array(get_called_class(), $ctrl), array_merge($attrOptions, array(
