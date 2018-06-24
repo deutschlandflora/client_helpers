@@ -85,7 +85,7 @@ $indicia_templates = array(
             ctrl.parents('.fieldset-wrapper').show();
           });
         }",
-  'image_upload' => '<input type="file" id="{id}" name="{fieldname}" accept="png|jpg|gif|jpeg|mp3|wav" {title}/>' . "\n" .
+  'image_upload' => '<input type="file" id="{id}" name="{fieldname}" accept="image/*" {title}/>' . "\n" .
       '<input type="hidden" id="{pathFieldName}" name="{pathFieldName}" value="{pathFieldValue}"/>' . "\n",
   'text_input' => '<input type="text" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" {title} {maxlength} />'."\n",
   'hidden_text' => '<input type="hidden" id="{id}" name="{fieldname}"{class} {attributes} value="{default}" />',
@@ -1613,8 +1613,7 @@ JS;
     $stylesheets = '';
     if (isset($resources)) {
       $resourceList = self::get_resources();
-      foreach ($resources as $resource)
-      {
+      foreach ($resources as $resource) {
         if (!in_array($resource, self::$dumped_resources)) {
           if (isset($resourceList[$resource]['stylesheets'])) {
             foreach ($resourceList[$resource]['stylesheets'] as $s) {
