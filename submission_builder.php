@@ -377,7 +377,7 @@ class submission_builder extends helper_config {
             // This is the final file destination, so create the image files.
             Image::create_image_files($uploadpath, $filename);
           }
-        } elseif (preg_match('/^('.$modelName.':)?[a-z_]+_path$/', $fieldname) {
+        } elseif (preg_match('/^('.$modelName.':)?[a-z_]+_path$/', $fieldname)) {
           // image fields can be of form {model}:{qualifier}_path (e.g. group:logo_path) if they are
           // directly embedded in the entity, rather than in a child media entity. These files need
           // to be moved to interim upload folder and will be sent to the warehouse after a successful
