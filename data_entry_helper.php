@@ -7543,6 +7543,7 @@ HTML;
         }
         $output = self::$ctrl($attrOptions);
         break;
+
       case 'Integer':
       case 'I':
         // We can use integer fields to store the results of custom lookups, e.g. against species or locations...
@@ -7571,11 +7572,8 @@ HTML;
           $toControl = self::$ctrl($toAttrOptions);
           $output = str_replace(['{col-1}', '{col-2}'], [$output, $toControl], $indicia_templates['two-col-50']);
         }
-<<<<<<< HEAD
-
-=======
->>>>>>> develop
         break;
+
       case 'Boolean':
       case 'B':
         // A change in template means we can now use a checkbox if desired: in fact this is now the default.
@@ -7589,6 +7587,7 @@ HTML;
           $output = self::checkbox($attrOptions);
         }
         break;
+
       case 'D': // Date
       case 'Specific Date': // Date
       case 'V': // Vague Date
@@ -7600,6 +7599,7 @@ HTML;
           $attrOptions['allowFuture']=true;
         $output = self::date_picker($attrOptions);
         break;
+
       case 'Lookup List':
       case 'L':
         if(!array_key_exists('noBlankText', $options)){
@@ -7681,6 +7681,7 @@ HTML;
           'valueField'=>$lookUpKey,
           'extraParams' => array_merge($options['extraParams'] + $dataSvcParams))));
         break;
+
       default:
         if ($item) {
           $output = '<strong>UNKNOWN DATA TYPE "'.$item['data_type'].'" FOR ID:'.$item['id'].' CAPTION:'.$item['caption'].'</strong><br />';
