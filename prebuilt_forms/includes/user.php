@@ -117,57 +117,68 @@ function get_options_array_with_user_data($listData) {
  * will give the hub text name.
  */
 function apply_user_replacements($original) {
-  if (!is_string($original))
+  if (!is_string($original)) {
     return $original;
-  $replace=array('{user_id}', '{username}', '{email}');
-  $replaceWith=array(
-      hostsite_get_user_field('id'),
-      hostsite_get_user_field('name'),
-      hostsite_get_user_field('mail'),
+  }
+  $original = trim($original);
+  $replace = array('{user_id}', '{username}', '{email}');
+  $replaceWith = array(
+    hostsite_get_user_field('id'),
+    hostsite_get_user_field('name'),
+    hostsite_get_user_field('mail'),
   );
-  // Do basic replacements and trim the data
-  $text=trim(str_replace($replace, $replaceWith, $original));
-  // Look for any profile field replacments
+  // Do basic replacements and trim the data.
+  $text = str_replace($replace, $replaceWith, $original);
+  // Look for any profile field replacments.
   if (preg_match_all('/{([a-zA-Z0-9\-_]+)}/', $text, $matches) && function_exists('hostsite_get_user_field')) {
-    foreach($matches[1] as $profileField) {
-      // got a request for a user profile field, so copy it's value across into the report parameters
+    foreach ($matches[1] as $profileField) {
+      // Got a request for a user profile field, so copy it's value across into
+      // the report parameters.
       $fieldName = preg_replace('/^profile_/', '', $profileField);
-      // split off any field qualifier for vocabulary objects
-      $parts = explode(':',$fieldName);
+      // Split off any field qualifier for vocabulary objects.
+      $parts = explode(':', $fieldName);
       $fieldName = $parts[0];
-      $objectField = count($parts)>1 ? $parts[1] : 'tid';
+      $objectField = count($parts) > 1 ? $parts[1] : 'tid';
       $value = hostsite_get_user_field($fieldName);
       if ($value) {
-        // unserialise the data if it is serialised, e.g. when using profile_checkboxes to store a list of values.
+        // Unserialise the data if it is serialised, e.g. when using
+        // profile_checkboxes to store a list of values.
         $unserialisedValue = @unserialize($value);
-        // arrays are returned as a comma separated list
-        if (is_array($unserialisedValue))
-          $value = implode(',',$unserialisedValue);
-        else if(is_object($value)) { // if the field is a vocabulary item, then $value is a object, unserialize gives null
+        // Arrays are returned as a comma separated list.
+        if (is_array($unserialisedValue)) {
+          $value = implode(',', $unserialisedValue);
+        }
+        elseif (is_object($value)) {
+          // If the field is a vocabulary item, then $value is a object,
+          // unserialize gives null.
           $value = get_object_vars($value);
           $value = $value[$objectField];
-        } else
+        }
+        else {
           $value = $unserialisedValue ? $unserialisedValue : $value;
-        // nulls must be passed as empty string params.
-        $value = ($value===null ? '' : $value);
-      } else
-        $value='';
-      $text=str_replace('{'.$profileField.'}', $value, $text);
+        }
+        // Nulls must be passed as empty string params..
+        $value = ($value === NULL ? '' : $value);
+      }
+      else {
+        $value = '';
+      }
+      $text = str_replace('{' . $profileField . '}', $value, $text);
     }
   }
   // Look for any permission replacements
   if (preg_match_all('/\[([a-zA-Z0-9\-_ ]+)\]/', $text, $matches)) {
-    foreach($matches[1] as $permission) {
+    foreach ($matches[1] as $permission) {
       $value = hostsite_user_has_permission($permission) ? '1' : '0';
-      $text=str_replace("[$permission]", $value, $text);
+      $text = str_replace("[$permission]", $value, $text);
     }
   }
-  // convert booleans to true booleans
-  $text = ($text==='false') ? false : (($text==='true') ? true : $text);
-  // if the text was changed but we are not logged in then the whole value should
-  // be cleared. Otherwise {profile_surname}, {profile_first_name} would result in just
-  // a comma
-  if ($text!==$original && !hostsite_get_user_field('id', false))
+  // Convert booleans to true booleans.
+  $text = ($text === 'false') ? FALSE : (($text === 'true') ? TRUE : $text);
+  // If the text was changed but we are not logged in then the whole value
+  // should be cleared. Otherwise {profile_surname}, {profile_first_name} would
+  // result in just a comma.
+  if ($text !== $original && !hostsite_get_user_field('id', FALSE))
     return '';
   return $text;
 }
