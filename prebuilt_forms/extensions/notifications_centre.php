@@ -90,7 +90,6 @@ class extension_notifications_centre {
       $indicia_user_id=hostsite_get_user_field('indicia_user_id');
       if ($indicia_user_id) {
         iform_load_helpers(array('report_helper'));
-        report_helper::$javascript .= "indiciaData.user_id = ".$indicia_user_id.";\n";
         //The proxy url used when interacting with the notifications table in the database.
         report_helper::$javascript .= "indiciaData.notification_proxy_url = '".iform_ajaxproxy_url(null, 'notification')."';\n";
         //The proxy url used when interacting with the occurrence comment table in the database.
@@ -198,9 +197,6 @@ class extension_notifications_centre {
     if (!empty($options['groupIds'])) {
       $extraParams['group_ids'] = $options['groupIds'];
     }
-    // respect training mode
-    if (hostsite_get_user_field('training'))
-      $extraParams['training'] = 'true';
     $notifications = data_entry_helper::get_report_data(array(
       'dataSource'=>'library/notifications/notifications_list_for_notifications_centre',
       'readAuth'=>$auth['read'],

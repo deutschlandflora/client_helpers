@@ -951,7 +951,7 @@ NEWFUNCS;
      * The value is an array of regexes that the system will automatically match against.
      */
     $alternatives = array(
-      "sample:entered sref" => array("/(sample)?(spatial|grid)ref(erence)?/"),
+      "sample:entered sref" => array("/(sample)?((spatial|grid|map)ref(erence)?|lat(\/?)lon(g?))/"),
       "occurrence_2:taxa taxon list (from controlled termlist)" => array("/(2nd|second)(species(latin)?|taxon(latin)?|latin)(name)?/"),
       "occurrence:taxa taxon list (from controlled termlist)" => array("/(species(latin)?|taxon(latin)?|latin)(name)?/"),
       "sample:location name" => array("/(site|location)(name)?/"),

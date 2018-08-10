@@ -370,6 +370,7 @@ function iform_map_zoom_to_location($locationId, $readAuth) {
  * @param bool $restrict Set true to limit the map to the area covering the geoms.
  */
 function iform_map_zoom_to_geom($geom, $name, $restrict=false) {
+  drupal_set_message('iform_map_zoom_to_geom');
   $name = str_replace("'", "\\'", $name);
   $geoms = is_array($geom) ? $geom : [$geom];
   $geomJson = json_encode($geoms);
@@ -382,6 +383,7 @@ function iform_map_zoom_to_geom($geom, $name, $restrict=false) {
 SCRIPT;
   // Note, since the following moves the map, we want it to be the first mapInitialisationHook
   data_entry_helper::$javascript .= <<<SCRIPT
+indiciaData.mapZoomPlanned = true;
 indiciaFns.zoomToBounds = function(mapdiv, bounds) {
   // Skip zoom to loaded bounds if already zoomed to a report output, remembering a position set in a cookie, or
   // loading an initial feature (e.g. viewing an edited record)

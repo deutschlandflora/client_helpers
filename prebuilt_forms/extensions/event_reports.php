@@ -141,7 +141,7 @@ class extension_event_reports {
     $reportOptions = array_merge(
       iform_report_get_report_options($args, $auth['read']),
       array(
-        'dataSource' => 'library/occurrence_images/filterable_explore_list',
+        'dataSource' => 'library/occurrence_images/filterable_explore_list_minimal',
         'bands' => array(array('content'=>
           '<div class="gallery-item status-{record_status} certainty-{certainty} ">'.
           '<a class="fancybox" href="{imageFolder}{media}"><img src="{imageFolder}thumb-{media}" title="{taxon}" alt="{taxon}"/><br/>{formatted}</a></div>')),
@@ -347,8 +347,6 @@ class extension_event_reports {
       ),
       $options
     );
-    if (hostsite_get_user_field('training'))
-      $reportOptions['extraParams']['training'] = 'true';
     $reportOptions['extraParams']['limit']=$reportOptions['limit'];
     $rows = report_helper::get_report_data($reportOptions);
     $r = self::output_title($options);
@@ -404,8 +402,6 @@ class extension_event_reports {
       ),
       $options
     );
-    if (hostsite_get_user_field('training'))
-      $reportOptions['extraParams']['training'] = 'true';
     $reportOptions['extraParams']['user_id'] = $userId;
     $rows = report_helper::get_report_data($reportOptions);
     if (count($rows)) {
