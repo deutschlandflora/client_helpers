@@ -2116,6 +2116,10 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
   */
   protected static function buildElementAttributes($options) {
     global $custom_terms;
+    $options = array_merge([
+      'disabled' => FALSE,
+      'readonly' => FALSE,
+    ], $options);
     $rules = (array_key_exists('validation', $options) ? $options['validation'] : array());
     if (!is_array($rules)) $rules = array($rules);
     if (!empty($options['fieldname']) && array_key_exists($options['fieldname'], self::$default_validation_rules)) {
