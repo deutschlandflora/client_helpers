@@ -2186,7 +2186,7 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
   *
   * @todo Implement a more complete list of validation rules.
   */
-  protected static function converToJqueryValMetadata($rules, $options) {
+  protected static function convertToJqueryValMetadata($rules, $options) {
     $converted = array();
     foreach ($rules as $rule) {
       // Detect the rules that can simply be passed through
