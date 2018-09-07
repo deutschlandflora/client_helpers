@@ -118,7 +118,7 @@ class iform_ebms_transects_allocation {
     	'select_all_class' => 'select-all-button',
     	'deselect_all_class' => 'deselect-all-button',
     	'auth' => $auth,
-    	'base_url' => !empty(data_entry_helper::$warehouse_proxy) ? data_entry_helper::$warehouse_proxy : data_entry_helper::$base_url,
+    	'base_url' => data_entry_helper::getProxiedBaseUrl(),
     	'config' => $current,
     	'alt_row_class' => 'odd',
     	'ajax_location_post_URL' => url('iform/ajax/ebms_transects_allocation') . '/saveLocationAttribute/' . $nid,
