@@ -19,8 +19,8 @@
  * @link https://github.com/indicia-team/warehouse/
  */
 
-if (file_exists('helper_config.php')) {
-  include_once 'helper_config.php';
+if (file_exists(dirname(__FILE__) . '/helper_config.php')) {
+  require_once 'helper_config.php';
 }
 require_once 'lang.php';
 require_once 'libcurlEmulator/libcurlemu.inc.php';
