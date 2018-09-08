@@ -755,7 +755,7 @@ JS;
    */
   public static function get_resources() {
     if (self::$resource_list === NULL) {
-      $base = self::ensureTrailingSlash(parent::$base_url);
+      $base = self::ensureTrailingSlash(self::$base_url);
       self::$js_path = empty(self::$js_path) ? "{$base}media/js/" : self::ensureTrailingSlash(self::$js_path);
       self::$css_path = empty(self::$css_path) ? "{$base}media/css/" : self::ensureTrailingSlash(self::$css_path);
       self::$images_path = empty(self::$images_path) ? "{$base}media/images/" : self::ensureTrailingSlash(self::$images_path);
