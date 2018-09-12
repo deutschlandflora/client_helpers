@@ -1128,7 +1128,7 @@ JS;
     $hasVisibleContent=false;
     // apply defaults
     $options = array_merge(array(
-      'inlineMapTools' => false,
+      'inlineMapTools' => FALSE,
       'helpText' => true
     ), $options);
     $r = '';
@@ -1144,7 +1144,7 @@ JS;
     // into a map initialisation hook.
     if (isset($options['paramsInMapToolbar']) && $options['paramsInMapToolbar'])
       self::$javascript .= "mapInitialisationHooks.push(function(div) {\n";
-    foreach($options['form'] as $key=>$info) {
+    foreach ($options['form'] as $key => $info) {
       $tools = array();
       // Skip parameters if we have been asked to ignore them
       if (!isset($options['paramsToExclude']) || !in_array($key, $options['paramsToExclude'])) {
@@ -1267,7 +1267,8 @@ JS;
       'label' => lang::get($info['display']),
       'helpText' => $options['helpText'] ? $info['description'] : '', // note we can't fit help text in the toolbar versions of a params form
       'fieldname' => $fieldPrefix.$key,
-      'nocache' => isset($options['nocache']) && $options['nocache']
+      'nocache' => isset($options['nocache']) && $options['nocache'],
+      'validation' => empty($info['validation']) ? [] : $info['validation'],
     );
     // If this parameter is in the URL or post data, put it in the control instead of the original default
     if (isset($options['defaults'][$key]))

@@ -182,7 +182,7 @@ class import_helper extends helper_base {
       $formOptions = array(
         'form' => $formArray,
         'readAuth' => $options['auth']['read'],
-        'nocache' => TRUE
+        'nocache' => TRUE,
       );
       if (isset($options['presetSettings'])) {
         // Skip parts of the form we have a preset value for.
