@@ -1787,17 +1787,32 @@ HTML;
    * which can be set to a JSON array containing either occurrence and/or
    * sample depending on which type of custom attributes to load. Defaults to
    * ["occurrence"] but you might want to include "sample" in the array when
-   * there are taxon specific habitat attributes for example. Any other options
-   * are passed through to the controls.
+   * there are taxon specific habitat attributes for example.
+   *
+   * Set the @validateAgainstTaxa option to true to enable validation of
+   * attribute values against the equivalent attributes defined for the taxon
+   * which requires the warehouse attribute_sets module to be enabled and
+   * configured.
+   *
+   * Any other options are passed through to the controls.
    *
    * @return string
    *   HTML for the div.
    */
   protected static function get_control_speciesdynamicattributes($auth, $args, $tabAlias, $options) {
     $types = isset($options['types']) ? $options['types'] : ['occurrence'];
+    $validateAgainstTaxa = empty($options['validateAgainstTaxa']) ? 'false' : 'true';
     unset($options['types']);
+    unset($options['validateAgainstTaxa']);
     $ajaxUrl = hostsite_get_url('iform/ajax/dynamic_sample_occurrence');
-    data_entry_helper::$javascript .= "indiciaData.ajaxUrl=\"$ajaxUrl\";\n";
+    $language = iform_lang_iso_639_2(hostsite_get_user_field('language'));
+    data_entry_helper::$javascript .= <<<JS
+indiciaData.ajaxUrl="$ajaxUrl";
+indiciaData.validateAgainstTaxa = $validateAgainstTaxa;
+indiciaData.userLang = '$language';
+
+JS;
+
     // If loading existing data, we need to know the sex/stage attrs so we can
     // find the value to filter to when retrieving attrs.
     if (!empty(self::$loadedOccurrenceId)) {
@@ -1829,7 +1844,12 @@ HTML;
       }
       // Other options need to pass through to AJAX loaded controls.
       $optsJson = json_encode($options);
-      data_entry_helper::$javascript .= "indiciaData.dynamicAttrOptions$type=$optsJson;\n";
+      data_entry_helper::$javascript .= <<<JS
+indiciaData.dynamicAttrOptions$type=$optsJson;
+$.each(indiciaFns.hookDynamicAttrsAfterLoad, function callHook() {
+  this($('.species-dynamic-attrs.attr-type-$type'), '$type');
+});
+JS;
       // Add a container div.
       $r .= "<div class=\"species-dynamic-attributes attr-type-$type\">$controls</div>";
     }
@@ -1842,11 +1862,12 @@ HTML;
    * @return array
    *   List of attribute data.
    */
-  private static function getDynamicAttrsList($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $occurrenceId = NULL) {
+  private static function getDynamicAttrsList($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $language, $occurrenceId = NULL) {
     $params = [
       'survey_id' => $surveyId,
       'taxa_taxon_list_id' => $ttlId,
       'master_checklist_id' => hostsite_get_config_value('iform', 'master_checklist_id', 0),
+      'language' => $language,
     ];
     if (!empty($stageTermlistsTermIds)) {
       $params['stage_termlists_term_ids'] = implode(',', $stageTermlistsTermIds);
@@ -1870,62 +1891,73 @@ HTML;
    * @return string
    *   Controls as an HTML string.
    */
-  private static function getDynamicAttrs($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $options, $occurrenceId = NULL) {
+  private static function getDynamicAttrs($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $options,
+      $occurrenceId = NULL, $language = NULL) {
     iform_load_helpers(['data_entry_helper', 'report_helper']);
-    $attrs = self::getDynamicAttrsList($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $occurrenceId);
+    require_once 'includes/dynamic.php';
+    $attrs = self::getDynamicAttrsList($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $language, $occurrenceId);
     $prefix = $type === 'sample' ? 'smp' : 'occ';
     $r = '';
-    $lastOuterBlock = '';
-    $lastInnerBlock = '';
+    $fieldsetTracking = [
+      'l1_category' => '',
+      'l2_category' => '',
+      'outer_block_name' => '',
+      'inner_block_name' => '',
+    ];
+    $fieldsetFieldNames = array_keys($fieldsetTracking);
+    $attrSpecificOptions = [];
+    $defAttrOptions = ['extraParams' => $readAuth];
+    self::prepare_multi_attribute_options($options, $defAttrOptions, $attrSpecificOptions);
     foreach ($attrs as $attr) {
-      // Create fieldsets for the innner and outer block.
-      if ($lastOuterBlock !== $attr['outer_block_name']) {
-        if (!empty($lastInnerBlock)) {
-          $r .= '</fieldset>';
+      // Output any nested fieldsets required.
+      foreach ($fieldsetFieldNames as $idx => $fieldsetFieldName) {
+        if ($fieldsetTracking[$fieldsetFieldName] !== $attr[$fieldsetFieldName]) {
+          for ($i = $idx + 1; $i < count($fieldsetTracking); $i++) {
+            if ($fieldsetTracking[$fieldsetFieldNames[$i]] !== '') {
+              $r .= '</fieldset>';
+              $fieldsetTracking[$fieldsetFieldNames[$i]] = '';
+            }
+          }
+          if (!empty($attr[$fieldsetFieldName])) {
+            $r .= '<fieldset><legend>' . lang::get($attr[$fieldsetFieldName]) . '</legend>';
+          }
+          $fieldsetTracking[$fieldsetFieldName] = $attr[$fieldsetFieldName];
         }
-        if (!empty($lastOuterBlock)) {
-          $r .= '</fieldset>';
-        }
-        if (!empty($attr['outer_block_name']))
-          $r .= '<fieldset><legend>' . lang::get($attr['outer_block_name']) . '</legend>';
-        if (!empty($attr['inner_block_name']))
-          $r .= '<fieldset><legend>' . lang::get($attr['inner_block_name']) . '</legend>';
       }
-      elseif ($lastInnerBlock !== $attr['inner_block_name']) {
-        if (!empty($lastInnerBlock)) {
-          $r .= '</fieldset>';
-        }
-        if (!empty($attr['inner_block_name']))
-          $r .= '<fieldset><legend>' . lang::get($attr['inner_block_name']) . '</legend>';
-      }
-      $lastInnerBlock=$attr['inner_block_name'];
-      $lastOuterBlock=$attr['outer_block_name'];
       $values = json_decode($attr['values']);
-      $options['extraParams'] = $readAuth;
+      $attr['caption'] = data_entry_helper::getTranslatedAttrField('caption', $attr, $language);
+      $baseAttrId = "{$prefix}Attr:$attr[attribute_id]";
+      $ctrlOptions = self::extract_ctrl_multi_value_options($baseAttrId, $defAttrOptions, $attrSpecificOptions);
       if (empty($values) || (count($values) === 1 && $values[0] === NULL)) {
-        $attr['id'] = "{$prefix}Attr:$attr[attribute_id]";
+        $attr['id'] = $baseAttrId;
         $attr['fieldname'] = "{$prefix}Attr:$attr[attribute_id]";
         $attr['default'] = $attr['default_value'];
         $attr['displayValue'] = $attr['default_value_caption'];
         $attr['defaultUpper'] = $attr['default_upper_value'];
-        $r .= data_entry_helper::outputAttribute($attr, $options);
+        $r .= data_entry_helper::outputAttribute($attr, $ctrlOptions);
       }
       else {
+        $doneValues = [];
         foreach ($values as $value) {
-          $attr['id'] = "{$prefix}Attr:$attr[attribute_id]:$value->id";
-          $attr['fieldname'] = "{$prefix}Attr:$attr[attribute_id]:$value->id";
-          $attr['default'] = $value->raw_value;
-          $attr['displayValue'] = $value->value;
-          $attr['defaultUpper'] = $value->upper_value;
-          $r .= data_entry_helper::outputAttribute($attr, $options);
+          // Values may be duplicated if an attribute is linked to a taxon
+          // twice in the taxon hierarchy, so we mitigate against it here
+          // (otherwise SQL would be complex)
+          if (!in_array($value->id, $doneValues)) {
+            $attr['id'] = "$baseAttrId:$value->id";
+            $attr['fieldname'] = "taxAttr:$attr[attribute_id]:$value->id";
+            $attr['default'] = $value->raw_value;
+            $attr['displayValue'] = $value->value;
+            $attr['defaultUpper'] = $value->upper_value;
+            $r .= data_entry_helper::outputAttribute($attr, $ctrlOptions);
+            $doneValues[] = $value->id;
+          }
         }
       }
     }
-    if (!empty($lastInnerBlock)) {
-      $r .= '</fieldset>';
-    }
-    if (!empty($lastOuterBlock)) {
-      $r .= '</fieldset>';
+    foreach ($fieldsetTracking as $fieldsetName) {
+      if (!empty($fieldsetName)) {
+        $r .= '</fieldset>';
+      }
     }
     return $r;
   }
@@ -1936,8 +1968,8 @@ HTML;
    * Attribute HTML is echoed to the client.
    */
   public static function ajax_dynamicattrs($website_id, $password) {
-    iform_load_helpers(['data_entry_helper']);
-    $readAuth = data_entry_helper::get_read_auth($website_id, $password);
+    iform_load_helpers(['report_helper']);
+    $readAuth = report_helper::get_read_auth($website_id, $password);
     echo self::getDynamicAttrs(
       $readAuth,
       $_GET['survey_id'],
@@ -1945,8 +1977,44 @@ HTML;
       json_decode($_GET['stage_termlists_term_ids']),
       $_GET['type'],
       json_decode($_GET['options'], TRUE),
-      empty($_GET['occurrence_id']) ? NULL : $_GET['occurrence_id']
+      empty($_GET['occurrence_id']) ? NULL : $_GET['occurrence_id'],
+      $_GET['language']
     );
+    helper_base::$is_ajax = TRUE;
+
+    if (!empty($_GET['validate_against_taxa'])) {
+      $r = report_helper::get_report_data([
+        'dataSource' => "library/$_GET[type]_attributes/$_GET[type]_attributes_for_taxon_with_taxon_validation_rules",
+        'readAuth' => $readAuth,
+        'extraParams' => ['taxa_taxon_list_id' => $_GET['taxa_taxon_list_id']],
+      ]);
+      if (!empty($r)) {
+        $data = json_encode($r);
+        $typeAbbr = $_GET['type'] === 'occurrence' ? 'occ' : 'smp';
+        $langExpected = lang::get('Expected values for {1}');
+        helper_base::addLanguageStringsToJs('dynamicattrs', ['expected' => 'Expected values for {1}']);
+        report_helper::$javascript .= <<<JS
+indiciaData.{$typeAbbr}TaxonValidationRules = $data;
+indiciaFns.applyTaxonValidationRules('$typeAbbr', '$_GET[type]');
+
+JS;
+      }
+    }
+
+    $scripts = helper_base::get_scripts(
+      helper_base::$javascript,
+      helper_base::$late_javascript,
+      helper_base::$onload_javascript,
+      FALSE, TRUE
+    );
+    if ($scripts) {
+      echo <<<JS
+<script type="text/javascript">
+$scripts
+</script>
+
+JS;
+    }
   }
 
   /**

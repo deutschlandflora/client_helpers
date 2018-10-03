@@ -192,7 +192,7 @@ if ($("#{escapedId} option").length===0) {
   'report_picker' => '<div id="{id}" {class}>{reports}<div class="report-metadata"></div><button type="button" id="picker-more">{moreinfo}</button><div class="ui-helper-clearfix"></div></div>',
   'report_download_link' => '<div class="report-download-link"><a href="{link}">{caption}</a></div>',
   'verification_panel' => '<div id="verification-panel">{button}<div class="messages" style="display: none"></div></div>',
-  'two-col-50' => '<div class="two columns"><div class="column">{col-1}</div><div class="column">{col-2}</div></div>',
+  'two-col-50' => '<div class="two columns"{attrs}><div class="column">{col-1}</div><div class="column">{col-2}</div></div>',
   'loading_overlay' => '<div class="loading-overlay"></div>',
   'report-table' => '<table{class}>{content}</table>',
   'report-thead' => '<thead{class}>{content}</thead>',
@@ -206,7 +206,10 @@ if ($("#{escapedId} option").length===0) {
   'review_input' => '<div{class}{id}><div{headerClass}{headerId}>{caption}</div>
 <div id="review-map-container"></div>
 <div{contentClass}{contentId}></div>
-</div>'
+</div>',
+  'dataValueList' => '<div class="detail-panel" id="{id}"><h3>{title}</h3><div class="record-details-fields ui-helper-clearfix">{content}</div></div>',
+  'dataValue' => '<div class="field ui-helper-clearfix"><span>{caption}:</span><span>{value}</span></div>',
+  'speciesDetailsThumbnail' => '<div class="gallery-item"><a class="fancybox" href="{imageFolder}{the_text}"><img src="{imageFolder}{imageSize}-{the_text}" title="{caption}" alt="{caption}"/><br/>{caption}</a></div>',
 );
 
 
@@ -646,8 +649,8 @@ indiciaData.lang.$group = {};
 
 JS;
     foreach ($strings as $key => $text) {
-        self::$javascript .= "indiciaData.lang.$group.$key = '" .
-        str_replace("'", "\'", lang::get($text)) . "';\n";
+      self::$javascript .= "indiciaData.lang.$group.$key = '" .
+      str_replace("'", "\'", lang::get($text)) . "';\n";
     }
   }
 
@@ -1713,10 +1716,6 @@ JS;
           }
           if (isset($resourceList[$resource]['javascript'])) {
             foreach ($resourceList[$resource]['javascript'] as $j) {
-              // if enabling fancybox, link it up
-              if (strpos($j, 'fancybox.') !== FALSE) {
-                self::$javascript .= "$('a.fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });\n";
-              }
               // look out for a condition that this script is IE only.
               if (substr($j, 0, 4)=='[IE]'){
               	$libraries .= "<!--[if IE]><script type=\"text/javascript\" src=\"".substr($j, 4)."\"></script><![endif]-->\n";
@@ -2136,9 +2135,8 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
    */
   public static function explode_lines_key_value_pairs($value) {
     preg_match_all("/([^=\r\n]+)=([^\r\n]+)/", $value, $pairs);
-    $trim = create_function('&$val', '$val = trim($val);');
-    array_walk($pairs[1], $trim);
-    array_walk($pairs[2], $trim);
+    $pairs[1] = array_map('trim', $pairs[1]);
+    $pairs[1] = array_map('trim', $pairs[2]);
     if (count($pairs[1]) == count($pairs[2]) && count($pairs[1]) != 0) {
       return array_combine($pairs[1], $pairs[2]);
     } else {

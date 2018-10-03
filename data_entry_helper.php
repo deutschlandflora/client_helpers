@@ -313,6 +313,7 @@ class data_entry_helper extends helper_base {
               'termlist_id' => $def['termlist_id'],
               'view' => 'cache',
               'orderby' => isset($def['orderby']) ? $def['orderby'] : 'term',
+              'allow_data_entry' => 't',
             ),
           ));
           foreach ($termlistData as $term) {
@@ -3646,7 +3647,11 @@ if ($('#$options[id]').parents('.ui-tabs-panel').length) {
     static $doneAddLinkPopup=false;
     $typeTermData = self::get_population_data(array(
       'table'=>'termlists_term',
-      'extraParams'=>$options['readAuth']+array('view'=>'cache', 'termlist_title'=>'Media types', 'columns'=>'id,term')
+      'extraParams'=>$options['readAuth']+array(
+        'view' => 'cache',
+        'termlist_title' => 'Media types',
+        'allow_data_entry' => 't',
+        'columns' => 'id,term')
     ));
     $typeTermIdLookup = array();
     foreach ($typeTermData as $record) {
@@ -7340,14 +7345,19 @@ HTML;
    *   Either caption or description depending on what is being translated.
    * @param array $attr
    *   Custom attribute array loaded from data services.
+   * @param string $language
+   *   3 character language code. If NULL, then the current user's language
+   *   will be used.
    *
    * @return string
    *   Translated caption.
    */
-  private static function getTranslatedAttrField($field, array $attr) {
+  public static function getTranslatedAttrField($field, array $attr, $language = NULL) {
     require_once 'prebuilt_forms/includes/language_utils.php';
     if (!empty($attr[$field . '_i18n']) && function_exists('hostsite_get_user_field')) {
-      $language = iform_lang_iso_639_2(hostsite_get_user_field('language'));
+      if (!$language) {
+        $language = iform_lang_iso_639_2(hostsite_get_user_field('language'));
+      }
       $otherLanguages = json_decode($attr[$field . '_i18n'], TRUE);
       if (isset($otherLanguages[$language])) {
         return $otherLanguages[$language];
@@ -7560,7 +7570,12 @@ HTML;
             'controlWrapTemplate' => 'justControl',
           ]);
           $toControl = self::$ctrl($toAttrOptions);
-          $output = str_replace(['{col-1}', '{col-2}'], [$output, $toControl], $indicia_templates['two-col-50']);
+          $wrapperId = 'range-wrap-' . str_replace(':', '-', $attrOptions[fieldname]);
+          $output = str_replace(
+            ['{col-1}', '{col-2}', '{attrs}'],
+            [$output, $toControl, " id=\"$wrapperId\""],
+            $indicia_templates['two-col-50']
+          );
         }
         break;
 
@@ -7599,7 +7614,7 @@ HTML;
           $attrOptions['class'] = $options['class'];
         $dataSvcParams = array('termlist_id' => $item['termlist_id'], 'view' => 'cache', 'sharing' => 'editing');
         if (array_key_exists('language', $options)) {
-          $dataSvcParams = $dataSvcParams + array('iso'=>$options['language']);
+          $dataSvcParams = $dataSvcParams + array('language_iso'=>$options['language']);
         }
         if (!array_key_exists('orderby', $options['extraParams'])) {
           $dataSvcParams = $dataSvcParams + array('orderby'=>'sort_order');
@@ -7669,7 +7684,7 @@ HTML;
           'table'=>'termlists_term',
           'captionField'=>'term',
           'valueField'=>$lookUpKey,
-          'extraParams' => array_merge($options['extraParams'] + $dataSvcParams))));
+          'extraParams' => array_merge(['allow_data_entry' => 't'], $options['extraParams'], $dataSvcParams))));
         break;
 
       default:

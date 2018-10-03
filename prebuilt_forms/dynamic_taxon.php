@@ -653,7 +653,12 @@ HTML;
    */
   protected static function get_control_taxondynamicattributes($auth, $args, $tabAlias, $options) {
     $ajaxUrl = hostsite_get_url('iform/ajax/dynamic_taxon');
-    data_entry_helper::$javascript .= "indiciaData.ajaxUrl=\"$ajaxUrl\";\n";
+    $language = iform_lang_iso_639_2(hostsite_get_user_field('language'));
+    data_entry_helper::$javascript .= <<<JS
+indiciaData.ajaxUrl='$ajaxUrl';
+indiciaData.userLang = '$language';
+
+JS;
     // Create a div to hold the controls, pre-populated only when loading
     // existing data.
     $r = '';
@@ -671,13 +676,19 @@ HTML;
         $auth['read'],
         $args['taxon_list_id'],
         $idToLoad,
-        $options
+        $options,
+        $language
       );
       // Other options need to pass through to AJAX loaded controls.
       $optsJson = json_encode($options);
-      data_entry_helper::$javascript .= "indiciaData.dynamicAttrOptions=$optsJson;\n";
+      data_entry_helper::$javascript .= <<<JS
+indiciaData.dynamicAttrOptions=$optsJson;
+$.each(indiciaFns.hookDynamicAttrsAfterLoad, function callHook() {
+  this($('.taxon-dynamic-attrs'));
+});
+JS;
       // Add a container div.
-      $r .= "<div class=\"taxon-dynamic-attributes attr-type-$type\">$controls</div>";
+      $r .= "<div class=\"taxon-dynamic-attributes\">$controls</div>";
     }
     return $r;
   }
@@ -688,11 +699,12 @@ HTML;
    * @return array
    *   List of attribute data.
    */
-  private static function getDynamicAttrsList($readAuth, $taxonListId, $ttlId) {
+  private static function getDynamicAttrsList($readAuth, $taxonListId, $language, $ttlId) {
     $params = [
       'taxon_list_id' => $taxonListId,
       'taxa_taxon_list_id' => $ttlId,
       'master_checklist_id' => hostsite_get_config_value('iform', 'master_checklist_id', 0),
+      'language' => $language,
     ];
     $r = report_helper::get_report_data([
       'dataSource' => "library/taxa_taxon_list_attributes/taxa_taxon_list_attributes_for_form",
@@ -710,61 +722,83 @@ HTML;
    * @return string
    *   Controls as an HTML string.
    */
-  private static function getDynamicAttrs($readAuth, $taxonListId, $ttlId, $options) {
+  private static function getDynamicAttrs($readAuth, $taxonListId, $ttlId, $options, $language = NULL) {
     iform_load_helpers(['data_entry_helper', 'report_helper']);
-    $attrs = self::getDynamicAttrsList($readAuth, $taxonListId, $ttlId);
+    $attrs = self::getDynamicAttrsList($readAuth, $taxonListId, $language, $ttlId);
     $r = '';
-    $lastOuterBlock = '';
-    $lastInnerBlock = '';
+    $fieldsetTracking = [
+      'l1_category' => '',
+      'l2_category' => '',
+      'outer_block_name' => '',
+      'inner_block_name' => '',
+    ];
+    $fieldsetFieldNames = array_keys($fieldsetTracking);
+    $attrSpecificOptions = [];
+    $defAttrOptions = ['extraParams' => $readAuth];
+    self::prepare_multi_attribute_options($options, $defAttrOptions, $attrSpecificOptions);
     foreach ($attrs as $attr) {
-      // Create fieldsets for the innner and outer block.
-      if ($lastOuterBlock !== $attr['outer_block_name']) {
-        if (!empty($lastInnerBlock)) {
-          $r .= '</fieldset>';
+      //Padding in pixels, start at zero, far left for heading
+      $fieldsetHeaderPaddingTracker=0;
+      $paddingAmount=50;
+      //When atributes are drawn, they must always be padded more than the heading
+      $attrPaddingAmount=$fieldsetHeaderPaddingTracker+$paddingAmount;
+      //Start with a quite a large header for the fieldset, then for each sub-heading we increase it to make it smaller (as it uses HTML <h> tag)
+      $headerSize=3;
+      // Output any nested fieldsets required.
+      foreach ($fieldsetFieldNames as $idx => $fieldsetFieldName) {
+        if ($fieldsetTracking[$fieldsetFieldName] !== $attr[$fieldsetFieldName]) {
+          for ($i = $idx + 1; $i < count($fieldsetTracking); $i++) {
+            if ($fieldsetTracking[$fieldsetFieldNames[$i]] !== '') {
+              $r .= '</fieldset>';
+              $fieldsetTracking[$fieldsetFieldNames[$i]] = '';
+            }
+          }
+          if (!empty($attr[$fieldsetFieldName])) {
+            //Draw fieldset heading
+            $r .= '<fieldset style="padding-left: '.$fieldsetHeaderPaddingTracker.'px;"><h'.$headerSize.'>' . lang::get($attr[$fieldsetFieldName]) . '</h'.$headerSize.'>';
+            // Once heading is drawn, the next one will decrease in size and be padded further from left 
+            //(remembering the headerSize relates to the html <h> tag which decreases in size as number increases)
+            $headerSize=$headerSize+1;
+            $fieldsetHeaderPaddingTracker=$fieldsetHeaderPaddingTracker+$paddingAmount;
+          }
+          $fieldsetTracking[$fieldsetFieldName] = $attr[$fieldsetFieldName];
         }
-        if (!empty($lastOuterBlock)) {
-          $r .= '</fieldset>';
-        }
-        if (!empty($attr['outer_block_name']))
-          $r .= '<fieldset><legend>' . lang::get($attr['outer_block_name']) . '</legend>';
-        if (!empty($attr['inner_block_name']))
-          $r .= '<fieldset><legend>' . lang::get($attr['inner_block_name']) . '</legend>';
       }
-      elseif ($lastInnerBlock !== $attr['inner_block_name']) {
-        if (!empty($lastInnerBlock)) {
-          $r .= '</fieldset>';
-        }
-        if (!empty($attr['inner_block_name']))
-          $r .= '<fieldset><legend>' . lang::get($attr['inner_block_name']) . '</legend>';
-      }
-      $lastInnerBlock = $attr['inner_block_name'];
-      $lastOuterBlock = $attr['outer_block_name'];
       $values = json_decode($attr['values']);
       $options['extraParams'] = $readAuth;
+      $attr['caption'] = data_entry_helper::getTranslatedAttrField('caption', $attr, $language);
+      $baseAttrId = "taxAttr:$attr[attribute_id]";
+      $ctrlOptions = self::extract_ctrl_multi_value_options($baseAttrId, $defAttrOptions, $attrSpecificOptions);
       if (empty($values) || (count($values) === 1 && $values[0] === NULL)) {
-        $attr['id'] = "taxAttr:$attr[attribute_id]";
+        $attr['id'] = $baseAttrId;
         $attr['fieldname'] = "taxAttr:$attr[attribute_id]";
         $attr['default'] = $attr['default_value'];
         $attr['displayValue'] = $attr['default_value_caption'];
         $attr['defaultUpper'] = $attr['default_upper_value'];
-        $r .= data_entry_helper::outputAttribute($attr, $options);
+        $r .= '<div style="padding-left: '.$attrPaddingAmount.'px;">'.data_entry_helper::outputAttribute($attr, $ctrlOptions).'</div>';
       }
       else {
+        $doneValues = [];
         foreach ($values as $value) {
-          $attr['id'] = "taxAttr:$attr[attribute_id]:$value->id";
-          $attr['fieldname'] = "taxAttr:$attr[attribute_id]:$value->id";
-          $attr['default'] = $value->raw_value;
-          $attr['displayValue'] = $value->value;
-          $attr['defaultUpper'] = $value->upper_value;
-          $r .= data_entry_helper::outputAttribute($attr, $options);
+          // Values may be duplicated if an attribute is linked to a taxon
+          // twice in the taxon hierarchy, so we mitigate against it here
+          // (otherwise SQL would be complex)
+          if (!in_array($value->id, $doneValues)) {
+            $attr['id'] = "$baseAttrId:$value->id";
+            $attr['fieldname'] = "taxAttr:$attr[attribute_id]:$value->id";
+            $attr['default'] = $value->raw_value;
+            $attr['displayValue'] = $value->value;
+            $attr['defaultUpper'] = $value->upper_value;
+            $r .= '<div style="padding-left: '.$attrPaddingAmount.'px;">'.data_entry_helper::outputAttribute($attr, $ctrlOptions).'</div>';
+            $doneValues[] = $value->id;
+          }
         }
       }
     }
-    if (!empty($lastInnerBlock)) {
-      $r .= '</fieldset>';
-    }
-    if (!empty($lastOuterBlock)) {
-      $r .= '</fieldset>';
+    foreach ($fieldsetTracking as $fieldsetName) {
+      if (!empty($fieldsetName)) {
+        $r .= '</fieldset>';
+      }
     }
     return $r;
   }
@@ -781,10 +815,8 @@ HTML;
       $readAuth,
       $_GET['taxon_list_id'],
       $_GET['taxa_taxon_list_id'],
-      json_decode($_GET['stage_termlists_term_ids']),
-      $_GET['type'],
       json_decode($_GET['options'], TRUE),
-      empty($_GET['occurrence_id']) ? NULL : $_GET['occurrence_id']
+      $_GET['language']
     );
   }
 
