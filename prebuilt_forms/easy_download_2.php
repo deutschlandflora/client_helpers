@@ -449,7 +449,6 @@ class iform_easy_download_2 {
     }
     $r .= '<input type="submit" value="'.lang::get('Download').'"/></form>';
     data_entry_helper::$javascript .= 'indiciaData.ajaxUrl="'.hostsite_get_url('iform/ajax/easy_download_2')."\";\n";
-    data_entry_helper::$javascript .= 'indiciaData.nid = "'.$nid."\";\n";
     data_entry_helper::$javascript.="setAvailableDownloadFilters();\n";
     return $r;
   }
@@ -569,9 +568,10 @@ class iform_easy_download_2 {
    * An ajax handler which returns the surveys that are available for a given sharing type.
    * @param type $website_id
    * @param type $password
-   * @param type $node
+   * @param int $nid
+   *   Node ID.
    */
-  public static function ajax_surveys_for_sharing_type($website_id, $password, $node) {
+  public static function ajax_surveys_for_sharing_type($website_id, $password, $nid) {
     iform_load_helpers(array('data_entry_helper'));
     // @todo filter by the available context filters if appropriate
     $readAuth = array(

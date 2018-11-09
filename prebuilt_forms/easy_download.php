@@ -500,7 +500,7 @@ class iform_easy_download {
     // depending on if we are using the old explore report format or the new filterable format, the filter field names differ
     $userIdField = $useStandardParams ? 'user_id' : 'currentUser';
     $myRecordsField = $useStandardParams ? 'my_records' : 'ownData';
-    $locationIdField = $useStandardParams ? 'indexed_location_id' : 'location_id';
+    $locationIdField = $useStandardParams ? 'indexed_location_list' : 'location_list';
     $surveysListField = $useStandardParams ? 'survey_list' : 'surveys';
     $taxonGroupListField = $useStandardParams ? 'taxon_group_list' : 'taxon_groups';
     $filters = array_merge(

@@ -668,8 +668,10 @@ class iform_dynamic_sample_occurrence extends iform_dynamic {
         // Does the group filter define a site or boundary for the recording? If so and the form
         // is not locked to a boundary, we need to show it and limit the map extent.
         // This code grabs the first available value from the list of fields that could hold the value
-        $locationIDToLoad = @$filterDef->indexed_location_list ?: @$filterDef->indexed_location_id ?:
-            @$filterDef->location_list ?: @$filterDef->location_id;
+        $locationIDToLoad = @$filterDef->indexed_location_list
+          ?: @$filterDef->indexed_location_id
+          ?: @$filterDef->location_list
+          ?: @$filterDef->location_id;
 
         if ($locationIDToLoad) {
           $response = data_entry_helper::get_population_data(array(
@@ -1846,6 +1848,7 @@ JS;
       $optsJson = json_encode($options);
       data_entry_helper::$javascript .= <<<JS
 indiciaData.dynamicAttrOptions$type=$optsJson;
+// Call any load hooks.
 $.each(indiciaFns.hookDynamicAttrsAfterLoad, function callHook() {
   this($('.species-dynamic-attrs.attr-type-$type'), '$type');
 });
@@ -1894,72 +1897,9 @@ JS;
   private static function getDynamicAttrs($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $options,
       $occurrenceId = NULL, $language = NULL) {
     iform_load_helpers(['data_entry_helper', 'report_helper']);
-    require_once 'includes/dynamic.php';
     $attrs = self::getDynamicAttrsList($readAuth, $surveyId, $ttlId, $stageTermlistsTermIds, $type, $language, $occurrenceId);
     $prefix = $type === 'sample' ? 'smp' : 'occ';
-    $r = '';
-    $fieldsetTracking = [
-      'l1_category' => '',
-      'l2_category' => '',
-      'outer_block_name' => '',
-      'inner_block_name' => '',
-    ];
-    $fieldsetFieldNames = array_keys($fieldsetTracking);
-    $attrSpecificOptions = [];
-    $defAttrOptions = ['extraParams' => $readAuth];
-    self::prepare_multi_attribute_options($options, $defAttrOptions, $attrSpecificOptions);
-    foreach ($attrs as $attr) {
-      // Output any nested fieldsets required.
-      foreach ($fieldsetFieldNames as $idx => $fieldsetFieldName) {
-        if ($fieldsetTracking[$fieldsetFieldName] !== $attr[$fieldsetFieldName]) {
-          for ($i = $idx + 1; $i < count($fieldsetTracking); $i++) {
-            if ($fieldsetTracking[$fieldsetFieldNames[$i]] !== '') {
-              $r .= '</fieldset>';
-              $fieldsetTracking[$fieldsetFieldNames[$i]] = '';
-            }
-          }
-          if (!empty($attr[$fieldsetFieldName])) {
-            $r .= '<fieldset><legend>' . lang::get($attr[$fieldsetFieldName]) . '</legend>';
-          }
-          $fieldsetTracking[$fieldsetFieldName] = $attr[$fieldsetFieldName];
-        }
-      }
-      $values = json_decode($attr['values']);
-      $attr['caption'] = data_entry_helper::getTranslatedAttrField('caption', $attr, $language);
-      $baseAttrId = "{$prefix}Attr:$attr[attribute_id]";
-      $ctrlOptions = self::extract_ctrl_multi_value_options($baseAttrId, $defAttrOptions, $attrSpecificOptions);
-      if (empty($values) || (count($values) === 1 && $values[0] === NULL)) {
-        $attr['id'] = $baseAttrId;
-        $attr['fieldname'] = "{$prefix}Attr:$attr[attribute_id]";
-        $attr['default'] = $attr['default_value'];
-        $attr['displayValue'] = $attr['default_value_caption'];
-        $attr['defaultUpper'] = $attr['default_upper_value'];
-        $r .= data_entry_helper::outputAttribute($attr, $ctrlOptions);
-      }
-      else {
-        $doneValues = [];
-        foreach ($values as $value) {
-          // Values may be duplicated if an attribute is linked to a taxon
-          // twice in the taxon hierarchy, so we mitigate against it here
-          // (otherwise SQL would be complex)
-          if (!in_array($value->id, $doneValues)) {
-            $attr['id'] = "$baseAttrId:$value->id";
-            $attr['fieldname'] = "taxAttr:$attr[attribute_id]:$value->id";
-            $attr['default'] = $value->raw_value;
-            $attr['displayValue'] = $value->value;
-            $attr['defaultUpper'] = $value->upper_value;
-            $r .= data_entry_helper::outputAttribute($attr, $ctrlOptions);
-            $doneValues[] = $value->id;
-          }
-        }
-      }
-    }
-    foreach ($fieldsetTracking as $fieldsetName) {
-      if (!empty($fieldsetName)) {
-        $r .= '</fieldset>';
-      }
-    }
-    return $r;
+    return self::getDynamicAttrsOutput($prefix, $readAuth, $attrs, $options, $language);
   }
 
   /**
@@ -1982,7 +1922,7 @@ JS;
     );
     helper_base::$is_ajax = TRUE;
 
-    if (!empty($_GET['validate_against_taxa'])) {
+    if (!empty($_GET['validate_against_taxa']) && $_GET['validate_against_taxa'] === 't') {
       $r = report_helper::get_report_data([
         'dataSource' => "library/$_GET[type]_attributes/$_GET[type]_attributes_for_taxon_with_taxon_validation_rules",
         'readAuth' => $readAuth,
@@ -2265,7 +2205,7 @@ else
   protected static function get_control_recordstatus($auth, $args) {
     $default = isset(data_entry_helper::$entity_to_load['occurrence:record_status']) ?
         data_entry_helper::$entity_to_load['occurrence:record_status'] :
-        isset($args['defaults']['occurrence:record_status']) ? $args['defaults']['occurrence:record_status'] : 'C';
+        (isset($args['defaults']['occurrence:record_status']) ? $args['defaults']['occurrence:record_status'] : 'C');
     $values = array('I', 'C'); // not initially doing V=Verified
     $r = '<label for="occurrence:record_status">'.lang::get('LANG_Record_Status_Label')."</label>\n";
     $r .= '<select id="occurrence:record_status" name="occurrence:record_status">';
@@ -2356,31 +2296,34 @@ else
     // Can't call getGridMode in this context as we might not have the $_GET value to indicate grid
     if (isset($values['speciesgridmapmode']))
       $submission = data_entry_helper::build_sample_subsamples_occurrences_submission($values);
-    else if (isset($values['gridmode'])) {
+    else {
       // Work out the attributes that are for abundance, so could contain a zero
       $connection = iform_get_connection_details($nid);
       $readAuth = data_entry_helper::get_read_auth($connection['website_id'], $connection['password']);
-      $abundanceAttrs = array();
-      $occAttrs = self::getAttributesForEntity('occurrence', $args, $readAuth,
-        isset(self::$loadedOccurrenceId) ? self::$loadedOccurrenceId : '');
+      $abundanceAttrs = [];
+      $occIdToLoad = isset(self::$loadedOccurrenceId) ? self::$loadedOccurrenceId : '';
+      $occAttrs = self::getAttributesForEntity('occurrence', $args, $readAuth, $occIdToLoad);
       foreach ($occAttrs as &$attr) {
         if ($attr['system_function']==='sex_stage_count') {
           // If we have any lookups, we need to load the terms so we can compare the data properly
           // as term Ids are never zero
           if ($attr['data_type']==='L') {
-            $attr['terms'] = data_entry_helper::get_population_data(array(
+            $attr['terms'] = data_entry_helper::get_population_data([
               'table' => 'termlists_term',
-              'extraParams' => $readAuth + array('termlist_id' => $attr['termlist_id'], 'view' => 'cache', 'columns' => 'id,term'),
+              'extraParams' => $readAuth + ['termlist_id' => $attr['termlist_id'], 'view' => 'cache', 'columns' => 'id,term'],
               'cachePerUser' => false
-            ));
+            ]);
           }
           $abundanceAttrs[$attr['attributeId']] = $attr;
         }
       }
-      $submission = data_entry_helper::build_sample_occurrences_list_submission($values, false, $abundanceAttrs);
+      if (isset($values['gridmode'])) {
+        $submission = data_entry_helper::build_sample_occurrences_list_submission($values, false, $abundanceAttrs);
+      }
+      else {
+        $submission = data_entry_helper::build_sample_occurrence_submission($values, $abundanceAttrs);
+      }
     }
-    else
-      $submission = data_entry_helper::build_sample_occurrence_submission($values);
     foreach ($extensions as $extension) {
       $class_method = explode('.', "$extension");
       require_once("extensions/$class_method[0].php");

@@ -642,9 +642,6 @@ class helper_base {
    */
   public static function addLanguageStringsToJs($group, array $strings) {
       self::$javascript .= <<<JS
-if (typeof indiciaData.lang === "undefined") {
-  indiciaData.lang = {};
-}
 indiciaData.lang.$group = {};
 
 JS;
@@ -652,6 +649,23 @@ JS;
       self::$javascript .= "indiciaData.lang.$group.$key = '" .
       str_replace("'", "\'", lang::get($text)) . "';\n";
     }
+  }
+
+  /**
+   * Utility function to convert a list of strings into translated strings.
+   *
+   * @param array $strings
+   *   Associative array of keys and texts to translate.
+   *
+   * @return array
+   *   Associative array of translated strings keyed by untranslated string.
+   */
+  public static function getTranslations(array $strings) {
+    $r = [];
+    foreach ($strings as $string) {
+      $r[$string] = lang::get($string);
+    }
+    return $r;
   }
 
   /**
@@ -672,6 +686,7 @@ JS;
    *   * clearLayer
    *   * addrowtogrid
    *   * speciesFilterPopup
+   *   * import
    *   * indiciaMapPanel
    *   * indiciaMapEdit
    *   * postcode_search
@@ -794,6 +809,7 @@ JS;
           'deps' => array('jquery', 'jquery_ui'),
           'javascript' => array(self::$js_path . "indicia.widgets.js")
         ),
+        'import' => array('javascript' => array(self::$js_path . "import.js")),
         'indicia_locks' => array('deps' => array('jquery_cookie', 'json'), 'javascript' => array(self::$js_path."indicia.locks.js")),
         'jquery_cookie' => array('deps' => array('jquery'), 'javascript' => array(self::$js_path . "jquery.cookie.js")),
         'jquery_ui' => array(
@@ -811,7 +827,6 @@ JS;
         'treeview_async' => array('deps' => array('treeview'), 'javascript' => array(self::$js_path."jquery.treeview.async.js", self::$js_path."jquery.treeview.edit.js")),
         'googlemaps' => array('javascript' => array("$protocol://maps.google.com/maps/api/js?v=3" .
             (empty(self::$google_maps_api_key) ? '' : '&key=' . self::$google_maps_api_key))),
-        'virtualearth' => array('javascript' => array("$protocol://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.1")),
         'fancybox' => array('deps' => array('jquery'), 'stylesheets' => array(self::$js_path.'fancybox/source/jquery.fancybox.css'), 'javascript' => array(self::$js_path.'fancybox/source/jquery.fancybox.pack.js')),
         'treeBrowser' => array('deps' => array('jquery','jquery_ui'), 'javascript' => array(self::$js_path."jquery.treebrowser.js")),
         'defaultStylesheet' => array(
@@ -2136,7 +2151,7 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
   public static function explode_lines_key_value_pairs($value) {
     preg_match_all("/([^=\r\n]+)=([^\r\n]+)/", $value, $pairs);
     $pairs[1] = array_map('trim', $pairs[1]);
-    $pairs[1] = array_map('trim', $pairs[2]);
+    $pairs[2] = array_map('trim', $pairs[2]);
     if (count($pairs[1]) == count($pairs[2]) && count($pairs[1]) != 0) {
       return array_combine($pairs[1], $pairs[2]);
     } else {
