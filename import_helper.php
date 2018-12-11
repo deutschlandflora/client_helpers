@@ -107,6 +107,8 @@ class import_helper extends helper_base {
    */
 
   public static function importer($options) {
+    self::add_resource('jquery_ui');
+    self::add_resource('import');
     if (isset($_GET['total'])) {
       return self::upload_result($options);
     }
@@ -242,8 +244,6 @@ class import_helper extends helper_base {
     if (!file_exists($_SESSION['uploaded_file'])) {
       return lang::get('upload_not_available');
     }
-    self::add_resource('jquery_ui');
-    self::add_resource('import');
     $t = self::getTranslations([
       'Because you are looking up existing records to import into, required field validation will only be applied when the new data are merged into the existing data during import.',
       'Column in CSV File',
@@ -286,10 +286,19 @@ class import_helper extends helper_base {
         unset($settings[$key]);
       }
     }
-    // Cache the mappings.
-    $metadata = array(
+    // Cache the mappings
+    // deal with API change: original form sent in options as json_encoded strings:
+    // now assumed as class/objects
+    if(isset($options['importMergeFields']) && is_string($options['importMergeFields'])) {
+        $options['importMergeFields'] = json_decode($options['importMergeFields']);
+    }
+    if(isset($options['synonymProcessing']) && is_string($options['synonymProcessing'])) {
+        $options['synonymProcessing'] = json_decode($options['synonymProcessing']);
+    }
+    $metadata = array( // handed to metadata storage as json encoded strings
       'settings' => json_encode($settings),
-      'importMergeFields' => json_encode(isset($options['importMergeFields']) ? $options['importMergeFields'] : []),
+      'importMergeFields' => json_encode(isset($options['importMergeFields']) ? $options['importMergeFields'] : []), // comes from form already json encoded
+      'synonymProcessing' => json_encode(isset($options['synonymProcessing']) ? $options['synonymProcessing'] : new stdClass()), // comes from form already json encoded
     );
     $post = array_merge($options['auth']['write_tokens'], $metadata);
     $request = parent::$base_url . "index.php/services/import/cache_upload_metadata?uploaded_csv=$filename";
@@ -359,11 +368,18 @@ class import_helper extends helper_base {
         }
       }
     }
+    if (isset($options['synonymProcessing'])) {
+        $synonymProcessing = $options['synonymProcessing'];
+        if (isset($synonymProcessing->separateSynonyms) && $synonymProcessing->separateSynonyms === TRUE) {
+            $fields['synonym:tracker'] = lang::get("Main record vs Synonym");
+            $fields['synonym:identifier'] = lang::get("Field to group records together");
+        }
+    }
     $request = str_replace('get_import_fields', 'get_required_fields', $request);
     $response = self::http_post($request);
     $responseIds = json_decode($response['output'], TRUE);
     if (!is_array($responseIds)) {
-      return "curl request to $request failed. Response " . print_r($response, TRUE);
+        return "curl request to $request failed. Response " . print_r($response, TRUE);
     }
     $model_required_fields = self::expand_ids_to_fks($responseIds);
     $preset_fields = !empty($settings) ? self::expand_ids_to_fks(array_keys($settings)) : array();
@@ -425,7 +441,14 @@ HTML;
         $colCount++;
         $colFieldName = preg_replace('/[^A-Za-z0-9]/', '_', $column);
         $r .= "<tr><td>$column</td><td><select name=\"$colFieldName\" id=\"$colFieldName\">";
-        $r .= self::get_column_options($options['model'], $unlinked_fields, $column, $autoFieldMappings, count($existingDataLookupOptions) > 0); // this also create TDs for the remember checkboxes etc
+        $r .= self::getColumnOptions(
+          $options['model'],
+          $unlinked_fields,
+          $column,
+          $autoFieldMappings,
+          count($existingDataLookupOptions) > 0,
+          array_key_exists('allowDataDeletions', $options) ? $options['allowDataDeletions'] : FALSE
+        );
         $r .= "</select></td></tr>\n";
       }
     }
@@ -632,7 +655,6 @@ JS;
    * @param array $mappings List of column title to field mappings
    */
   private static function run_upload($options, $mappings) {
-    self::add_resource('jquery_ui');
     if (!file_exists($_SESSION['uploaded_file']))
       return lang::get('upload_not_available');
     $filename=basename($_SESSION['uploaded_file']);
@@ -738,38 +760,61 @@ JS;
   }
 
   /**
-   * Returns a list of columns as an list of <options> for inclusion in an HTML drop down,
-   * loading the columns from a model that are available to import data into
-   * (excluding the id and metadata). Triggers the handling of remembered checkboxes and the
-   * associated labelling.
-   * This method also attempts to automatically find a match for the columns based on a number of rules
-   * and gives the user the chance to save their settings for use the next time they do an import.
-   * @param string $model Name of the model
-   * @param array  $fields List of the available possible import columns
-   * @param string $column The name of the column from the CSV file currently being worked on.
-   * @param array $autoFieldMappings An array containing the automatic field mappings for the page.
+   * Retrieve column options for import.
+   *
+   * Returns a list of columns as an list of <options> for inclusion in an HTML
+   * drop down, loading the columns from a model that are available to import
+   * data into (excluding the id and metadata). Triggers the handling of
+   * remembered checkboxes and the associated labelling.
+   *
+   * This method also attempts to automatically find a match for the columns
+   * based on a number of rules and gives the user the chance to save their
+   * settings for use the next time they do an import.
+   *
+   * @param string $model
+   *   Name of the model.
+   * @param array $fields
+   *   List of the available possible import columns.
+   * @param string $column
+   *   The name of the column from the CSV file currently being worked on.
+   * @param array $autoFieldMappings
+   *   An array containing the automatic field mappings for the page.
+   * @param bool $includeLookups
+   *   Should information on which columns are used for lookup be shown.
+   * @param bool $allowDataDeletions
+   *   Should the importer allow data to be removed.
    */
-  private static function get_column_options($model, $fields, $column, $autoFieldMappings, $includeLookups) {
-    $skipped = array('id', 'created_by_id', 'created_on', 'updated_by_id', 'updated_on',
-      'fk_created_by', 'fk_updated_by', 'fk_meaning', 'fk_taxon_meaning', 'deleted', 'image_path'
-    );
-    //strip the column of spaces for use in html ids
+  private static function getColumnOptions($model, $fields, $column, $autoFieldMappings, $includeLookups, $allowDataDeletions = FALSE) {
+    $skipped = [
+      'image_path', 'created_by_id', 'created_on', 'updated_by_id', 'updated_on',
+      'fk_created_by', 'fk_updated_by', 'fk_meaning', 'fk_taxon_meaning',
+    ];
+    // Also skip deleted column if allow deletions disallowed.
+    if (!$allowDataDeletions) {
+      $skipped[] = 'deleted';
+    }
+    // We never want to delete at the term level (needs to be termlists_term).
+    unset($fields['term:deleted']);
+    // Strip the column of spaces for use in HTML ids.
     $idColumn = str_replace(" ", "", $column);
     $r = '';
-    $heading='';
+    $heading = '';
     $labelListIndex = 0;
     $labelList = array();
     $itWasSaved[$column] = 0;
     foreach ($fields as $field => $caption) {
-      if (strpos($field,":"))
-        list($prefix,$fieldname)=explode(':',$field);
-      else {
-        $prefix=$model;
-        $fieldname=$field;
+      if (strpos($field, ":")) {
+        list($prefix, $fieldname) = explode(':', $field);
       }
-      // Skip the metadata fields
-      if (!in_array($fieldname, $skipped)) {
-        // make a clean looking caption
+      else {
+        $prefix = $model;
+        $fieldname = $field;
+      }
+      // Skip the metadata fields, plus ID field unless in the main model. We
+      // don't want an import to break the links between records by changing
+      // FKs.
+      if (($prefix === $model || $fieldname !== 'id') && !in_array($fieldname, $skipped)) {
+        // Make a clean looking caption.
         $caption = self::make_clean_caption($caption, $prefix, $fieldname, $model);
         /*
          * The following creates an array called $labelList which is a list of all captions
@@ -790,24 +835,25 @@ JS;
       }
     }
     $labelList = array_count_values($labelList);
-    $multiMatch=array();
+    $multiMatch = array();
     foreach ($fields as $field => $caption) {
-      if (strpos($field,":"))
-        list($prefix,$fieldname)=explode(':',$field);
-      else {
-        $prefix=$model;
-        $fieldname=$field;
+      if (strpos($field, ":")) {
+        list($prefix, $fieldname) = explode(':', $field);
       }
-      // make a clean looking default caption. This could be provided by the $fields array, or we have to construct it.
+      else {
+        $prefix = $model;
+        $fieldname = $field;
+      }
+      // Make a clean looking default caption. This could be provided by the $fields array, or we have to construct it.
       $defaultCaption = self::make_clean_caption($caption, $prefix, $fieldname, $model);
       // Allow the default caption to be translated or overridden by language files.
-      $translatedCaption=self::translate_field($field, $defaultCaption);
-      //need a version of the caption without "from controlled termlist" as we ignore that for matching.
-      $strippedScreenCaption = str_replace(" (from controlled termlist)","",$translatedCaption);
-      $fieldname=str_replace(array('fk_', '_id'), array('', ''), $fieldname);
+      $translatedCaption = self::translate_field($field, $defaultCaption);
+      // Need a version of the caption without "from controlled termlist" as we ignore that for matching.
+      $strippedScreenCaption = str_replace(" (from controlled termlist)", "", $translatedCaption);
+      $fieldname = str_replace(array('fk_', '_id'), array('', ''), $fieldname);
       unset($option);
-      // Skip the metadata fields
-      if (!in_array($fieldname, $skipped)) {
+      // Skip the metadata fields and ID fields not in the main model.
+      if (($prefix === $model || $fieldname !== 'id') && !in_array($fieldname, $skipped)) {
         $selected = FALSE;
         //get user's saved settings, last parameter is 2 as this forces the system to explode into a maximum of two segments.
         //This means only the first occurrence for the needle is exploded which is desirable in the situation as the field caption
@@ -956,7 +1002,7 @@ JS;
   }
 
   /**
-   * Used by the get_column_options to draw the items that appear once for each of the import columns on the import page.
+   * Used by the getColumnOptions to draw the items that appear once for each of the import columns on the import page.
    * These are the checkboxes, the warning the drop-down setting was saved and also the non-unique match warning
    * @param string $r The HTML to be returned.
    * @param string $column Column from the import CSV file we are currently working with
@@ -1013,7 +1059,7 @@ TD;
   }
 
   /**
-   * Used by the get_column_options method to add "from controlled termlist" to the appropriate captions
+   * Used by the getColumnOptions method to add "from controlled termlist" to the appropriate captions
    * in the drop-downs on the import page.
    * @param string $caption The drop-down item currently being worked on
    * @param string $prefix Caption prefix
