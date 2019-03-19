@@ -1206,9 +1206,11 @@ JS;
    *   * *public* - Optional. If using the indicia_locations driver, then set
    *     this to true to include public (non-website specific) locations in the
    *     search results. Defaults to false.
-   *   * *<autoCollapseResults></autoCollapseResults> - Optional. If a list of
-   *     possible matches are found, does selecting a match automatically fold
-   *     up the results? Defaults to false.
+   *   * *autoCollapseResults* - Optional. If a list of possible matches are
+   *     found, does selecting a match automatically fold up the results?
+   *     Defaults to false.
+   *   * *georefQueryMap* - if true, after a successful search behaves as if the map
+   *     query tool was clicked on the location on the map. Defaults to false.
    *
    * @link http://code.google.com/apis/ajaxsearch/terms.html Google AJAX Search
    * API Terms of Use.
@@ -1231,29 +1233,31 @@ JS;
         'caption' => lang::get('Search'),
         'title' => '',
       )),
-      'public' => false,
-      'autoCollapseResults' => false,
-      'isFormControl' => true
+      'public' => FALSE,
+      'autoCollapseResults' => FALSE,
+      'isFormControl' => TRUE,
+      'georefQueryMap' => FALSE,
     ), $options);
     if ($options['driver'] === 'geoplanet') {
       return 'The GeoPlanet place search service is no longer supported';
     }
     if (($options['driver'] === 'google_places' && empty(self::$google_api_key))) {
-      // can't use place search without the driver API key
+      // Can't use place search without the driver API key
       return 'The georeference lookup control requires an API key configured for the place search API in use.<br/>';
     }
     self::add_resource('indiciaMapPanel');
     // dynamically build a resource to link us to the driver js file.
-    self::$required_resources[] = 'georeference_default_'.$options['driver'];
+    self::$required_resources[] = 'georeference_default_' . $options['driver'];
     // We need to see if there is a resource in the resource list for any special files required by this driver. This
     // will do nothing if the resource is absent.
-    self::add_resource('georeference_'.$options['driver']);
+    self::add_resource('georeference_' . $options['driver']);
     $settings = [
       'autoCollapseResults' => $options['autoCollapseResults'] ? 't' : 'f',
     ];
-    foreach ($options as $key=>$value) {
-      // if any of the options are for the georeferencer driver, then we must set them in the JavaScript.
-      if (substr($key, 0, 6)=='georef') {
+    foreach ($options as $key => $value) {
+      // If any of the options are for the georeferencer driver, then we must
+      // set them in the JavaScript.
+      if (substr($key, 0, 6) === 'georef') {
         $settings[$key] = $value;
       }
     }
@@ -1267,14 +1271,20 @@ JS;
       $settings['public'] = $options['public'] ? 't' : 'f';
       self::add_resource('json');
     }
-    self::$javascript .= '$.fn.indiciaMapPanel.georeferenceLookupSettings = ' . json_encode($settings) . ";\n";
+    self::$javascript .= '$.fn.indiciaMapPanel.georeferenceLookupSettings = $.extend($.fn.indiciaMapPanel.georeferenceLookupSettings, ' . json_encode($settings) . ");\n";
     if ($options['autoCollapseResults']) {
-      // no need for close button on results list
-      $options['closeButton']='';
-    } else {
-      // want a close button on the results list
-      $options['closeButton'] = self::apply_replacements_to_template($indicia_templates['button'],
-        array('href' => '#', 'id' => 'imp-georef-close-btn', 'class' => '', 'caption'=>lang::get('Close the search results'), 'title' => ''));
+      // No need for close button on results list.
+      $options['closeButton'] = '';
+    }
+    else {
+      // Want a close button on the results list.
+      $options['closeButton'] = self::apply_replacements_to_template($indicia_templates['button'], [
+        'href' => '#',
+        'id' => 'imp-georef-close-btn',
+        'class' => '',
+        'caption' => lang::get('Close the search results'),
+        'title' => ''
+      ]);
     }
     return self::apply_template('georeference_lookup', $options);
   }
@@ -2725,7 +2735,7 @@ JS;
       'captionFieldInEntity' => 'taxon',
       'valueField' => 'taxa_taxon_list_id',
       'outputPreferredNameToSelector' => FALSE,
-      'duplicateCheckFields' => array('taxon', 'taxa_taxon_list_id'),
+      'duplicateCheckFields' => array('taxon', 'taxon_meaning_id'),
       'mode' => 'species',
       'speciesIncludeBothNames' => FALSE,
       'speciesIncludeAuthorities' => FALSE,
@@ -7277,12 +7287,12 @@ HTML;
       $query['in']['restrict_to_location_type_id'] = $methods;
     }
 
+    // As of 2.0.0 the attribute views now sort according to the display weights, including blocks
     $attrOptions = array(
       'table'=>$options['attrtable'],
       'extraParams'=> array_merge(array(
         'deleted' => 'f',
         'website_deleted' => 'f',
-        'orderby'=>'weight',
         'query'=>json_encode($query),
         'sharing' => $sharing
       ), $options['extraParams'])

@@ -902,7 +902,12 @@ indiciaData.reports.$group.$uniqueName = $('#".$options['id']."').reportgrid({
       self::$javascript .= "});\n";
     }
     if ($options['ajax'] && $options['autoloadAjax']) {
-      self::$onload_javascript .= "indiciaData.reports.$group.$uniqueName.ajaxload(true);\n";
+      self::$onload_javascript .= <<<JS
+if (!indiciaData.reports.$group.{$uniqueName}[0].settings.populated) {
+  indiciaData.reports.$group.$uniqueName.ajaxload(true);
+}
+
+JS;
     }
     elseif (!$options['ajax']) {
       self::$onload_javascript .= "indiciaData.reports.$group.$uniqueName.setupPagerEvents();\n";
@@ -923,16 +928,21 @@ indiciaData.reports.$group.$uniqueName = $('#".$options['id']."').reportgrid({
 
  /**
   * Requests the data for a report from the reporting services.
-  * @param array $response Data to be returned.
-  * @param array $options Options array defining the report request.
-  * @param array $currentParamValues Array of current parameter values, e.g. the contents of
-  * parameters form.
-  * @param boolean $wantCount Set to true if a count of total results (ignoring limit) is required
-  * in the response.
-  * @param string $extras Set any additional URL filters if required, e.g. taxon_list_id=1 to filter
-  * for taxon list 1.
+
+  * @param array $response
+  *   Data to be returned.
+  * @param array $options
+  *   Options array defining the report request.
+  * @param array $currentParamValues
+  *   Array of current parameter values, e.g. the contents of parameters form.
+  * @param boolean $wantCount
+  *   Set to true if a count of total results (ignoring limit) is required in
+  *   the response.
+  * @param string $extras
+  *   Set any additional URL filters if required, e.g. taxon_list_id=1 to
+  *   filter for taxon list 1.
   */
-  private static function request_report(&$response, &$options, &$currentParamValues, $wantCount, $extras='') {
+  public static function request_report(&$response, &$options, &$currentParamValues, $wantCount, $extras='') {
     $extras .= '&wantColumns=1&wantParameters=1';
     if ($wantCount) {
       $extras .= '&wantCount=1';

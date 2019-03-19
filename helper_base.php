@@ -55,7 +55,7 @@ $indicia_templates = array(
   'buttonHighlightedClass' => 'indicia-button',
   'buttonWarningClass' => 'indicia-button',
     // Classes applied to <a> when styled like a button
-  'anchorButtonClass' => 'ui-state-default ui-corner-all indicia-button',
+  'anchorButtonClass' => 'indicia-button',
   'submitButton' => '<input id="{id}" type="submit"{class} name="{name}" value="{caption}" />',
   // Message boxes
   'messageBox' => '<div class="page-notice ui-state-highlight ui-corner-all">{message}</div>',
@@ -211,7 +211,6 @@ if ($("#{escapedId} option").length===0) {
   'dataValue' => '<div class="field ui-helper-clearfix"><span>{caption}:</span><span>{value}</span></div>',
   'speciesDetailsThumbnail' => '<div class="gallery-item"><a class="fancybox" href="{imageFolder}{the_text}"><img src="{imageFolder}{imageSize}-{the_text}" title="{caption}" alt="{caption}"/><br/>{caption}</a></div>',
 );
-
 
 /**
  * Base class for the report and data entry helpers. Provides several generally useful methods and also includes
@@ -510,14 +509,15 @@ class helper_base {
   public static $cache_chance_refresh_file = 10;
 
   /**
-   * Chance of purging the cache.
+   * Chance of a cache purge evemt.
    *
-   * On average, every 1 in $cache_chance_purge times the Warehouse is called for data, all files
-   * older than 5 times the cache_timeout will be purged, apart from the most recent $cache_allowed_file_count files.
+   * On average, every 1 in $cache_chance_purge times the Warehouse is called
+   * for data, all files older than 5 times the cache_timeout will be purged,
+   * apart from the most recent $cache_allowed_file_count files.
    *
    * @var int
    */
-  public static $cache_chance_purge = 100;
+  public static $cache_chance_purge = 500;
 
   /**
    * Files allowed in cache.
@@ -736,12 +736,14 @@ JS;
    *   * sref_handlers_4326
    *   * sref_handlers_osgb
    *   * sref_handlers_osie
+   *   * font_awesome
+   *   * leaflet
    */
   public static function add_resource($resource) {
 
     // Ensure indiciaFns is always the first resource added
     if (!self::$indiciaFnsDone) {
-      self::$indiciaFnsDone = true;
+      self::$indiciaFnsDone = TRUE;
       self::add_resource('indiciaFns');
     }
     $resourceList = self::get_resources();
@@ -838,16 +840,25 @@ JS;
         'validation' => array(
           'deps' => array('jquery'),
           'javascript' => array(
-            self::$js_path.'jquery.validate.min.js',
-            self::$js_path.'additional-methods.min.js',
-            self::$js_path.'indicia.additional-methods.js'
+            self::$js_path . 'jquery.validate.min.js',
+            self::$js_path . 'additional-methods.min.js',
+            self::$js_path . 'indicia.additional-methods.js'
           )
         ),
-        'plupload' => array('deps' => array('jquery_ui','fancybox'), 'javascript' => array(
-            self::$js_path.'jquery.uploader.js', self::$js_path.'plupload/js/plupload.full.min.js')),
-        'jqplot' => array('stylesheets' => array(self::$js_path.'jqplot/jquery.jqplot.min.css'), 'javascript' => array(
-                self::$js_path.'jqplot/jquery.jqplot.min.js',
-                '[IE]'.self::$js_path.'jqplot/excanvas.js')),
+        'plupload' => [
+          'deps' => ['jquery_ui', 'fancybox'],
+          'javascript' => [
+            self::$js_path . 'jquery.uploader.js',
+            self::$js_path . 'plupload/js/plupload.full.min.js',
+          ]
+        ],
+        'jqplot' => [
+          'stylesheets' => [self::$js_path . 'jqplot/jquery.jqplot.min.css'],
+          'javascript' => [
+            self::$js_path . 'jqplot/jquery.jqplot.min.js',
+            '[IE]' . self::$js_path . 'jqplot/excanvas.js'
+          ],
+        ],
         'jqplot_bar' => array('javascript' => array(self::$js_path.'jqplot/plugins/jqplot.barRenderer.js')),
         'jqplot_pie' => array('javascript' => array(self::$js_path.'jqplot/plugins/jqplot.pieRenderer.js')),
         'jqplot_category_axis_renderer' => array('javascript' => array(self::$js_path.'jqplot/plugins/jqplot.categoryAxisRenderer.js')),
@@ -898,6 +909,18 @@ JS;
             'javascript' => array(self::$js_path.'drivers/sref/osgb.js')),
         'sref_handlers_osie' => array(
             'javascript' => array(self::$js_path.'drivers/sref/osie.js')),
+        'font_awesome' => [
+          'stylesheets' => ['https://use.fontawesome.com/releases/v5.7.2/css/all.css']
+        ],
+        'leaflet' => [
+          'stylesheets' => ['https://unpkg.com/leaflet@1.4.0/dist/leaflet.css'],
+          'javascript' => [
+            'https://unpkg.com/leaflet@1.4.0/dist/leaflet.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/wicket/1.3.3/wicket.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/wicket/1.3.3/wicket-leaflet.min.js',
+            self::$js_path . 'leaflet.heat/dist/leaflet-heat.js',
+          ],
+        ],
       );
     }
     return self::$resource_list;
@@ -1597,6 +1620,9 @@ JS;
     // Keep a non-random cache for 10 minutes. It MUST be shorter than the normal cache lifetime so this expires more frequently.
     $r = self::cache_get(array('readauth-wid'=>$website_id), 600, false);
     if ($r===false) {
+      if (empty(self::$base_url)) {
+        throw new Exception(lang::get('Indicia configuration is incorrect. Warehouse URL is not configured.'));
+      }
       $postargs = "website_id=$website_id";
       $response = self::http_post(self::$base_url.'index.php/services/security/get_read_nonce', $postargs, false);
       if (isset($response['status'])) {
@@ -1759,7 +1785,7 @@ JS;
    */
   public static function get_scripts($javascript, $late_javascript, $onload_javascript, $includeWrapper=false, $closure=false) {
     if (!empty($javascript) || !empty($late_javascript) || !empty($onload_javascript)) {
-      $proxyUrl = self::relative_client_helper_path() . 'proxy.php';
+      $proxyUrl = self::getRootFolder() . self::relative_client_helper_path() . 'proxy.php';
       $protocol = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS']==='off' ? 'http' : 'https';
       $script = $includeWrapper ? "<script type='text/javascript'>/* <![CDATA[ */\n" : "";
       $script .= $closure ? "(function ($) {\n" : "";
@@ -2304,7 +2330,7 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
         'minimum' => ['jqRule' => 'min', 'valRegEx' => '-?\d+'],
         'mingridref' => ['jqRule' => 'mingridref', 'valRegEx' => '\d+'],
         'maxgridref' => ['jqRule' => 'maxgridref', 'valRegEx' => '\d+'],
-        'regex' => ['jqRule' => 'pattern', 'valRegEx' => '-?\d+'],
+        'regex' => ['jqRule' => 'pattern', 'valRegEx' => '.*'],
       ];
       $arr = explode('[', $rule);
       $ruleName = $arr[0];
@@ -2659,29 +2685,29 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
    */
   private static function purgeCache() {
     $cacheFolder = self::$cache_folder ? self::$cache_folder : self::relative_client_helper_path() . 'cache/';
-    self::purgeFiles(self::$cache_chance_purge, $cacheFolder, self::$cache_timeout * 5, self::$cache_allowed_file_count);
+    self::purgeFiles($cacheFolder, self::$cache_timeout * 5, self::$cache_allowed_file_count);
   }
 
   /**
    * Internal function to ensure old image files are purged periodically.
    */
   private static function purgeImages() {
-    self::purgeFiles(self::$cache_chance_purge, self::getInterimImageFolder(), self::$interim_image_expiry);
+    self::purgeFiles(self::getInterimImageFolder(), self::$interim_image_expiry);
   }
 
   /**
    * Performs a periodic purge of cached or interim image upload files.
-   * @param integer $chanceOfPurge Indicates the chance of a purge happening. 1 causes a purge
-   * every time the function is called, 10 means there is a 1 in 10 chance, etc.
-   * @param string $folder Path to the folder to purge cache files from.
-   * @param integer $timeout Age of files in seconds before they will be considered for
-   * purging.
-   * @param integer $allowedFileCount Number of most recent files to not bother purging
-   * from the cache.
+   *
+   * @param string $folder
+   *   Path to the folder to purge cache files from.
+   * @param integer $timeout
+   *   Age of files in seconds before they will be considered for purging.
+   * @param integer $allowedFileCount
+   *   Number of most recent files to not bother purging from the cache.
    */
-  private static function purgeFiles($chanceOfPurge, $folder, $timeout, $allowedFileCount=0) {
-    // don't do this every time.
-    if (TRUE || rand(1, $chanceOfPurge)===1) {
+  private static function purgeFiles($folder, $timeout, $allowedFileCount=0) {
+    // Don't do this every time.
+    if (rand(1, self::$cache_chance_purge) === 1) {
       // First, get an array of files sorted by date
       $files = array();
       $dir =  opendir($folder);
@@ -2689,27 +2715,29 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
       $exclude = array('.', '..', '.htaccess', 'web.config', '.gitignore');
       if ($dir) {
         while ($filename = readdir($dir)) {
-          if (is_dir($filename) || in_array($filename, $exclude))
+          if (in_array($filename, $exclude) || !is_file($filename)) {
             continue;
+          }
           $lastModified = filemtime($folder . $filename);
           $files[] = array($folder .$filename, $lastModified);
         }
       }
-      // sort the file array by date, oldest first
+      // Sort the file array by date, oldest first.
       usort($files, array('helper_base', 'DateCmp'));
-      // iterate files, ignoring the number of files we allow in the cache without caring.
+      // Iterate files, ignoring the number of files we allow in the cache
+      // without caring.
       for ($i=0; $i<count($files)-$allowedFileCount; $i++) {
-        // if we have reached a file that is not old enough to expire, don't go any further
+        // If we have reached a file that is not old enough to expire, don't go
+        // any further.
         if ($files[$i][1] > (time() - $timeout)) {
           break;
         }
-        // clear out the old file
+        // Clear out the old file.
         if (is_file($files[$i][0]))
           unlink($files[$i][0]);
       }
     }
   }
-
 
   /**
    * A custom PHP sorting function which uses the 2nd element in the compared array to
