@@ -95,6 +95,20 @@ class data_entry_helper extends helper_base {
    */
   public static $handled_attributes = array();
 
+  /**
+   * Track need to warn user if on a form that has checked records.
+   *
+   * @var int
+   */
+  public static $checkedRecordsCount = 0;
+
+  /**
+   * Also track unchecked records to help make a sensible warning message.
+   *
+   * @var int
+   */
+  public static $uncheckedRecordsCount = 0;
+
   /**********************************/
   /* Start of main controls section */
   /**********************************/
@@ -980,9 +994,6 @@ JS;
    * array('html5','flash','silverlight','html4'), though flash is removed for Internet Explorer 6. You
    * should not normally need to change this.
    * </li>
-   * <li><b>destinationFolder</b><br/>
-   * Override the destination folder for uploaded files. You should not normally need to change this.
-   * </li>
    * <li><b>codeGenerated</b>
    * If set to all (default), then this returns the HTML required and also inserts JavaScript in the document onload event. However, if you
    * need to delay the loading of the control until a certain event, e.g. when a radio button is checked, then this can be set
@@ -1036,11 +1047,12 @@ JS;
       'autoupload' => FALSE,
       'msgUploadError' => lang::get('upload error'),
       'msgFileTooBig' => lang::get('file too big for warehouse'),
-      'runtimes' => array('html5','flash','silverlight','html4'),
+      'runtimes' => ['html5', 'flash', 'silverlight', 'html4'],
       'autoupload' => TRUE,
       'imageWidth' => 200,
       'uploadScript' => "$protocol://$_SERVER[HTTP_HOST]" . self::getRootFolder() . self::relative_client_helper_path() . 'upload.php',
       'destinationFolder' => self::getInterimImageFolder('domain'),
+      'relativeImageFolder' => self::getImageRelativePath(),
       'finalImageFolder' => self::get_uploaded_image_folder(),
       'jsPath' => self::$js_path,
       'buttonTemplate' => $indicia_templates['button'],
@@ -2772,6 +2784,18 @@ JS;
         }
       });\n";
     }
+    // Existing records - check status in case there is a need to warn user.
+    if (isset(data_entry_helper::$entity_to_load['occurrence:id'])) {
+      $status = !empty(data_entry_helper::$entity_to_load['occurrence:record_status'])
+        ? data_entry_helper::$entity_to_load['occurrence:record_status']
+        : 'C';
+      if ($status === 'C') {
+        self::$checkedRecordsCount++;
+      }
+      else {
+        self::$uncheckedRecordsCount++;
+      }
+    }
     return self::autocomplete($options);
   }
 
@@ -3179,11 +3203,13 @@ RIJS;
       // store some globals that we need later when creating uploaders
       $relpath = self::getRootFolder() . self::client_helper_path();
       $interimImageFolder = self::getInterimImageFolder('domain');
+      $relativeImageFolder = self::getImageRelativePath();
       $js_path = self::$js_path;
       self::$javascript .= <<<JS
 indiciaData.uploadSettings = {
   uploadScript: '{$relpath}upload.php',
-  destinationFolder: '{$interimImageFolder}',
+  destinationFolder: '$interimImageFolder',
+  relativeImageFolder: '$relativeImageFolder',
   jsPath: '$js_path'
 JS;
       $langStrings = array(
@@ -3344,8 +3370,9 @@ JS;
         $editedRecord = isset($_GET['occurrence_id']) && $_GET['occurrence_id']==$existingRecordId;
         $editClass = $editedRecord ? ' edited-record ui-state-highlight' : '';
         $hasEditedRecord = $hasEditedRecord || $editedRecord;
-        // Verified records can be flagged with an icon
-        //Do an isset check as the npms_paths form for example uses the species checklist, but doesn't use an entity_to_load
+        // Verified records can be flagged with an icon.
+        // Do an isset check as the npms_paths form for example uses the
+        // species checklist, but doesn't use an entity_to_load.
         if (isset(self::$entity_to_load["sc:$loadedTxIdx:$existingRecordId:record_status"])) {
           $status = self::$entity_to_load["sc:$loadedTxIdx:$existingRecordId:record_status"];
           if (preg_match('/[VDR]/', $status)) {
@@ -3360,6 +3387,10 @@ JS;
               $title = lang::get('This record has been {1}. Changing it will mean that it will need to be rechecked by an expert.', $label);
               $firstCell .= "<img alt=\"$label\" title=\"$title\" src=\"{$imgPath}nuvola/$img-16px.png\">";
             }
+            data_entry_helper::$checkedRecordsCount++;
+          }
+          else {
+            data_entry_helper::$uncheckedRecordsCount++;
           }
         }
         $row .= str_replace(array('{content}','{colspan}','{editClass}','{tableId}','{idx}'),
@@ -4148,6 +4179,12 @@ JS;
         }
         $r .= self::get_species_checklist_col_header($options['id']."-present-$i", lang::get('species_checklist.present'),
           $visibleColIdx, $options['colWidths'], $attrs);
+        if ($options['speciesControlToUseSubSamples']) {
+          // Need a dummy header for this cell even though never visible to
+          // keep things aligned after responsive changes.
+          $r .= self::get_species_checklist_col_header($options['id']."-sample-$i", '',
+            $visibleColIdx, $options['colWidths'], ' style="display:none" data-hide="all" data-ignore="true" data-editable="true"');
+        }
 
         // All attributes - may be hidden in responsive mode, depending upon
         // the settings in the responsiveCols array.
@@ -7014,24 +7051,43 @@ HTML;
   }
 
   /**
-   * Retrieves any errors that have not been emitted alongside a form control and adds them to the page.
+   * Retrieves any errors that have not been emitted.
+   *
+   * Any errors that have not been emmitted elsewhere on the form are retrieved
+   * which will typically be related to attribtues which are required on the
+   * server side but where there are no matching controls on the form.
+   *
+   * If running inside Drupal then the errors are returned with explanation
+   * in a call to Drupal_set_message. Otherwise they are returned, normally for
+   * addition to the bottom of the form.
+   *
+   *
    * This is useful when added to the bottom of a form, because occasionally an error can be returned which is not associated with a form
    * control, so calling dump_errors with the inline option set to true will not emit the errors onto the page.
    * @return string HTML block containing the error information, built by concatenating the
    * validation_message template for each error.
    */
-  public static function dump_remaining_errors()
-  {
+  public static function dump_remaining_errors() {
     global $indicia_templates;
-    $r="";
-    if (self::$validation_errors!==null) {
+    $errors = [];
+    if (self::$validation_errors !== NULL) {
       foreach (self::$validation_errors as $errorKey => $error) {
         if (!in_array($error, self::$displayed_errors)) {
-          $r .= str_replace('{error}', lang::get($error), $indicia_templates['validation_message']);
-          $r .= "[".$errorKey."]";
+          $errors[] = lang::get($error) . '<br/>&nbsp;&nbsp;' . lang::get(' (related to attribute {1})', "[$errorKey]");
         }
       }
-      $r .= '<br/>';
+    }
+    $r = '';
+    if (count($errors)) {
+      $msg = <<<TXT
+Validation errors occurred when this form was submitted to the server. The form configuration may be incorrect as
+it appears the controls associated with these messages are missing from the form.
+TXT;
+      $r = lang::get($msg) . '<ul><li>' . implode($errors, '</li><li>') . '</li></ul>';
+      if (function_exists('hostsite_show_message')) {
+        hostsite_show_message($r, 'error');
+      }
+      return '';
     }
     return $r;
   }

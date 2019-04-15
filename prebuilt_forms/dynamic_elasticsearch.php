@@ -23,6 +23,8 @@ require_once 'includes/dynamic.php';
 
 /**
  * A prebuilt form for dynamically construction Elasticsearch content.
+ *
+ * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html
  */
 class iform_dynamic_elasticsearch extends iform_dynamic {
 
@@ -31,25 +33,51 @@ class iform_dynamic_elasticsearch extends iform_dynamic {
   private static $controlIndex = 0;
 
   /**
-   * Return the form metadata.
+   * Track control IDs so warning can be given if duplicate IDs are used.
+   *
+   * @var array
+   */
+  private static $controlIds = [];
+
+  /**
+   * Return the page metadata.
+   *
+   * @return array
+   *   Form metadata.
    */
   public static function get_dynamic_elasticsearch_definition() {
+    $description = <<<HTML
+Provides a dynamically output page which links to an index of occurrence data in an <a href="https://www.elastic.co">
+Elasticseach</a> cluster.
+This page can generate controls for the following:
+<ul>
+  <li>filtering</li>
+  <li>downloading</li>
+  <li>tabulating</li>
+  <li>charting</li>
+  <li>mapping</li>
+  <li>verification</li>
+</ul>
+HTML;
     return array(
       'title' => 'Elasticsearch outputs (customisable)',
       'category' => 'Experimental',
-      'description' => 'Provides a dynamically output page which can generate controls for filtering, downloading, ' .
-        'tabulating, charting and mapping Elasticsearch content.',
-      'recommended' => TRUE,
+      'description' => $description,
+      'helpLink' => 'https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html',
     );
   }
 
   /**
-   * Get the list of parameters for this form.
+   * Get the list of parameters for this form's Edit tab.
    *
    * @return array
    *   List of parameters that this form requires.
    */
   public static function get_parameters() {
+    $collationPermissionDescription = <<<TXT
+Permission required to access download of all records fall inside a location the user collates (e.g. a record centre
+staff member). Requires a field_location_collation integer field holding a location ID in the user account.
+TXT;
     return [
       [
         'name' => 'interface',
@@ -136,14 +164,6 @@ class iform_dynamic_elasticsearch extends iform_dynamic {
         'default' => '',
       ],
       [
-        'name' => 'edit_path',
-        'caption' => 'Edit path',
-        'description' => 'Path to a generic editing page.',
-        'type' => 'text_input',
-        'required' => FALSE,
-        'group' => 'Path settings',
-      ],
-      [
         'name' => 'my_records_permission',
         'caption' => 'My records download permission',
         'description' => "Permission required to access download of user's records.",
@@ -164,9 +184,7 @@ class iform_dynamic_elasticsearch extends iform_dynamic {
       [
         'name' => 'location_collation_records_permission',
         'caption' => 'Records in collated locality download permission',
-        'description' => 'Permission required to access download of all records fall inside a location the user ' .
-          'collates (e.g. a record centre staff member). Requires a field_location_collation integer field holding a ' .
-          'location ID in the user account.',
+        'description' => $collationPermissionDescription,
         'type' => 'text_input',
         'required' => FALSE,
         'group' => 'Permission settings',
@@ -176,33 +194,58 @@ class iform_dynamic_elasticsearch extends iform_dynamic {
   }
 
   /**
+   * Main build function to return the page HTML.
    *
+   * @param array $args
+   *   Page parameters.
+   * @param int $nid
+   *   Node ID.
    */
   public static function get_form($args, $nid) {
-    $ajaxUrl = hostsite_get_url('iform/ajax/dynamic_elasticsearch');
+    // Retrieve the Elasticsearch mappings.
     self::getMappings($nid);
+    // Prepare the stuff we need to pass to the JavaScript.
     $mappings = json_encode(self::$esMappings);
-    $verifyUrl = iform_ajaxproxy_url($nid, 'list_verify');
-    $commentUrl = iform_ajaxproxy_url($nid, 'occ-comment');
+    $ajaxUrl = hostsite_get_url('iform/ajax/dynamic_elasticsearch');
     $userId = hostsite_get_user_field('indicia_user_id');
-    $editPath = empty($args['edit_path']) ? '' : helper_base::getRootFolder(TRUE) . $args['edit_path'];
     $rootFolder = helper_base::getRootFolder(TRUE);
+    $dateFormat = helper_base::$date_format;
     data_entry_helper::$javascript .= <<<JS
 indiciaData.ajaxUrl = '$ajaxUrl';
 indiciaData.esSources = [];
 indiciaData.esMappings = $mappings;
 indiciaData.userId = $userId;
-indiciaData.ajaxFormPostSingleVerify = "$verifyUrl&user_id=$userId&sharing=verification";
-indiciaData.ajaxFormPostComment = "$commentUrl&user_id=$userId&sharing=verification";
-indiciaData.editPath = "$editPath";
-indiciaData.rootFolder = "$rootFolder";
+indiciaData.rootFolder = '$rootFolder';
+indiciaData.dateFormat = '$dateFormat';
 
 JS;
     helper_base::add_resource('font_awesome');
-    return parent::get_form($args, $nid);
+    $r = parent::get_form($args, $nid);
+    // The following function must fire after the page content is built.
+    data_entry_helper::$onload_javascript .= <<<JS
+indiciaFns.populateDataSources();
+
+JS;
+    return $r;
   }
 
-  private static function recurseMappings($data, &$mappings, $path = []) {
+  /**
+   * Converts nested mappings data from ES to a flat field list.
+   *
+   * ES returns the mappings for an index as a hierarchical structure
+   * representing the JSON document fields. This recursive function converts
+   * this structure to a flat associative array of fields and field
+   * configuration where the keys are the field names with their parent
+   * elements separated by periods.
+   *
+   * @param array $data
+   *   Mappings data structure retrieved from ES.
+   * @param array $mappings
+   *   Array which will be populated by the field list.
+   * @param array $path
+   *   Array of parent fields which define the path to the current element.
+   */
+  private static function recurseMappings(array $data, array &$mappings, array $path = []) {
     foreach ($data as $field => $config) {
       $thisPath = array_merge($path, [$field]);
       if (isset($config['properties'])) {
@@ -228,6 +271,14 @@ JS;
     }
   }
 
+  /**
+   * Retrieves the ES index mappings data.
+   *
+   * A list of mapped fields is stored in self::$esMappings.
+   *
+   * @param int $nid
+   *   Node ID, used to retrieve the node parameters which contain ES settings.
+   */
   private static function getMappings($nid) {
     $params = hostsite_get_node_field_value($nid, 'params');
     $url = helper_base::$base_url . 'index.php/services/rest/' . $params['endpoint'] . '/_mapping/doc';
@@ -259,11 +310,34 @@ JS;
     self::$esMappings = $mappings;
   }
 
-  private static function checkOptions($controlName, &$options, $requiredOptions, $jsonOptions) {
+  /**
+   * Provide common option handling for controls.
+   *
+   * * Sets a unique ID for the control if not already set.
+   * * Checks that required options are all populated.
+   * * Checks that options which should contain JSON do so.
+   * * Source option converted to array if not already.
+   *
+   * @param string $controlName
+   *   Name of the type of control.
+   * @param array $options
+   *   Options passed to the control (key and value associative array). Will be
+   *   modified.
+   * @param array $requiredOptions
+   *   Array of option names which must have a value.
+   * @param array $jsonOptions
+   *   Array of option names which must contain JSON.
+   */
+  private static function checkOptions($controlName, array &$options, array $requiredOptions, array $jsonOptions) {
     self::$controlIndex++;
     $options = array_merge([
-      'id' => "es-output-$controlName" . self::$controlIndex,
+      'id' => "es-$controlName-" . self::$controlIndex,
     ], $options);
+    // Fail if duplicate ID on page.
+    if (in_array($options['id'], self::$controlIds)) {
+      throw new Exception("Control ID $options[id] is duplicated in the page configuration");
+    }
+    self::$controlIds[] = $options['id'];
     foreach ($requiredOptions as $option) {
       if (!isset($options[$option]) || $options[$option] === '') {
         throw new Exception("Control [$controlName] requires a parameter called @$option");
@@ -271,7 +345,7 @@ JS;
     }
     foreach ($jsonOptions as $option) {
       if (!empty($options[$option]) && !is_object($options[$option]) && !is_array($options[$option])) {
-        throw new exception("@$option option for [$controlName] is not a valid JSON object.");
+        throw new Exception("@$option option for [$controlName] is not a valid JSON object.");
       }
     }
     // Source option can be either a single named source, or an array of key
@@ -282,27 +356,39 @@ JS;
     }
   }
 
+  /**
+   * Initialises the JavaScript required for an Elasticsearch data source.
+   *
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[source]
+   *
+   * @return string
+   *   Empty string as no HTML required.
+   */
   protected static function get_control_source($auth, $args, $tabalias, $options) {
-    if (empty($options['id'])) {
-      throw new exception('A [source] requires an @id option.');
-    }
-    if (!empty($options['aggregation'])) {
-      if (!is_object($options['aggregation']) && !is_array($options['aggregation'])) {
-        throw new exception('@aggregation option for [source] is not a valid JSON object.');
-      }
-    }
+    self::checkOptions(
+      'source',
+      $options,
+      ['id'],
+      ['aggregation', 'filterBoolClauses', 'buildTableXY', 'sort']
+    );
     $dataOptions = self::getOptionsForJs($options, [
       'id',
-      'paged',
       'from',
       'size',
+      'sort',
       'aggregation',
+      'buildTableXY',
       'initialMapBounds',
+      'filterBoolClauses',
+      'filterSourceGrid',
+      'filterField',
+      'filterBoundsUsingMap',
     ]);
     data_entry_helper::$javascript .= <<<JS
 indiciaData.esSources.push($dataOptions);
 
 JS;
+    // A source is entirely JS driven - no HTML.
     return '';
   }
 
@@ -323,16 +409,23 @@ JS;
         $optionArr[$filter['id']] = $filter['title'];
       }
     }
-    $controlOptions = [
-      'label' => $options['definesPermissions'] ? lang::get('Context') : lang::get('Filter'),
-      'fieldname' => $options['id'],
-      'lookupValues' => $optionArr,
-      'class' => 'user-filter',
-    ];
-    if (!$options['definesPermissions']) {
-      $controlOptions['blankText'] = '- ' . lang::get('Please select') . ' - ';
+    if (count($optionArr) === 0) {
+      // No filters available. Until we support saving, doesn't make sense to
+      // show the control.
+      return '';
     }
-    return data_entry_helper::select($controlOptions);
+    else {
+      $controlOptions = [
+        'label' => $options['definesPermissions'] ? lang::get('Context') : lang::get('Filter'),
+        'fieldname' => $options['id'],
+        'lookupValues' => $optionArr,
+        'class' => 'user-filter',
+      ];
+      if (!$options['definesPermissions']) {
+        $controlOptions['blankText'] = '- ' . lang::get('Please select') . ' - ';
+      }
+      return data_entry_helper::select($controlOptions);
+    }
   }
 
   /**
@@ -351,16 +444,19 @@ JS;
     if (!empty($args['all_records_permission']) && hostsite_user_has_permission($args['all_records_permission'])) {
       $allowedTypes['all'] = lang::get('All records');
     }
-    // Add collated location (e.g. LRC boundary) records download permission if allowed.
+    // Add collated location (e.g. LRC boundary) records download permission if
+    // allowed.
     if (!empty($args['location_collation_records_permission'])
         && hostsite_user_has_permission($args['location_collation_records_permission'])) {
       $locationId = hostsite_get_user_field('location_collation');
-      $locationData = data_entry_helper::get_population_data([
-        'table' => 'location',
-        'extraParams' => $auth['read'] + ['id' => $locationId],
-      ]);
-      if (count($locationData) > 0) {
-        $allowedTypes['location_collation'] = lang::get('Records within location ' . $locationData[0]['name']);
+      if ($locationId) {
+        $locationData = data_entry_helper::get_population_data([
+          'table' => 'location',
+          'extraParams' => $auth['read'] + ['id' => $locationId],
+        ]);
+        if (count($locationData) > 0) {
+          $allowedTypes['location_collation'] = lang::get('Records within location ' . $locationData[0]['name']);
+        }
       }
     }
     if (count($allowedTypes) === 1) {
@@ -372,7 +468,7 @@ HTML;
     }
     else {
       return data_entry_helper::select([
-        'fieldName' => 'es-permissions-filter',
+        'fieldname' => 'es-permissions-filter',
         'lookupValues' => $allowedTypes,
         'class' => 'permissions-filter',
       ]);
@@ -405,9 +501,6 @@ HTML;
             r="80"
             style="stroke-dashoffset:503px;"
             stroke-dasharray="503"
-            stroke-width="12px"
-            stroke="#2c7fb8"
-            fill="#7fcdbb"
             transform="rotate(-90)" />
       </g>
       </text>
@@ -430,12 +523,9 @@ HTML;
       $indicia_templates['two-col-50']);
     // This does nothing at the moment - just a placeholder for if and when we
     // add some download options.
-    $dataOptions = self::getOptionsForJs($options, []);
-    $encodedOptions = htmlspecialchars($dataOptions);
-    // Escape the source so it can output as an attribute.
-    $source = str_replace('"', '&quot;', json_encode($options['source']));
+    $dataOptions = self::getOptionsForJs($options, [], TRUE);
     return <<<HTML
-<div id="$options[id]" class="es-output es-output-download" data-es-source="$source" data-es-output-config="$encodedOptions">
+<div id="$options[id]" class="es-output es-output-download" data-es-source="$source" data-es-output-config="$dataOptions">
   $r
 </div>
 
@@ -445,20 +535,24 @@ HTML;
   /**
    * An Elasticsearch powered grid control.
    *
-   * Options are:
-   * * source
-   * * columns
-   *   @todo Document the special field convertors.
-   *   @todo Make these consistent with those used in the scrolled download
-   *   CSV definition.
-   * * actions
-   * * includeColumnHeadings
-   * * includeFilterRow
-   * * includePager
-   * * sortable
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[dataGrid]
    */
   protected static function get_control_dataGrid($auth, $args, $tabalias, $options) {
-    self::checkOptions('dataGrid', $options, ['source', 'columns'], ['columns', 'actions']);
+    self::checkOptions(
+      'dataGrid',
+      $options,
+      ['source'],
+      ['actions', 'columns']
+    );
+    if (empty($options['columns']) && empty($options['autogenColumns'])) {
+      throw new Exception("Control [dataGrid] requires a parameter called @columns or must have @autogenColumns=true");
+    }
+    helper_base::add_resource('indiciaFootableReport');
+    // Add footableSort for aggregation tables.
+    if (!empty($options['simpleAggregation']) || !empty($options['sourceTable'])) {
+      helper_base::add_resource('footableSort');
+    }
+    // Fancybox for image popups.
     helper_base::add_resource('fancybox');
     $dataOptions = self::getOptionsForJs($options, [
       'columns',
@@ -467,13 +561,14 @@ HTML;
       'includeFilterRow',
       'includePager',
       'sortable',
-      'aggregation',
-    ]);
-    $encodedOptions = htmlspecialchars($dataOptions);
+      'simpleAggregation',
+      'sourceTable',
+      'autogenColumns',
+    ], TRUE);
     // Escape the source so it can output as an attribute.
     $source = str_replace('"', '&quot;', json_encode($options['source']));
     return <<<HTML
-<div id="$options[id]" class="es-output es-output-dataGrid" data-es-source="$source" data-es-output-config="$encodedOptions"></div>
+<div id="$options[id]" class="es-output es-output-dataGrid" data-es-source="$source" data-es-output-config="$dataOptions"></div>
 
 HTML;
   }
@@ -487,36 +582,61 @@ HTML;
     $dataOptions = self::getOptionsForJs($options, [
       'styles',
       'showSelectedRow',
-      'applyBoundsTo',
       'initialLat',
       'initialLng',
       'initialZoom',
-    ]);
-    $encodedOptions = htmlspecialchars($dataOptions);
+      'cookies',
+    ], TRUE);
     // Escape the source so it can output as an attribute.
     $source = str_replace('"', '&quot;', json_encode($options['source']));
 
     return <<<HTML
-<div id="$options[id]" class="es-output es-output-map" data-es-source="$source" data-es-output-config="$encodedOptions"></div>
+<div id="$options[id]" class="es-output es-output-map" data-es-source="$source" data-es-output-config="$dataOptions"></div>
 
 HTML;
   }
 
+  /**
+   * A panel containin buttons for record verification actions.
+   *
+   * @link
+   *
+   * @return string
+   *   Panel HTML;
+   */
   protected static function get_control_verificationButtons($auth, $args, $tabalias, $options) {
-    self::checkOptions('recordDetails', $options, ['showSelectedRow'], []);
+    self::checkOptions('verificationButtons', $options, ['showSelectedRow'], []);
+    if (!empty($options['editPath'])) {
+      $options['editPath'] = helper_base::getRootFolder(TRUE) . $options['editPath'];
+    }
+    if (!empty($options['viewPath'])) {
+      $options['viewPath'] = helper_base::getRootFolder(TRUE) . $options['viewPath'];
+    }
     $dataOptions = self::getOptionsForJs($options, [
       'showSelectedRow',
-    ]);
-    $encodedOptions = htmlspecialchars($dataOptions);
-    $optionalButtonArray = [];
-    if (!empty($args['edit_path'])) {
-      $optionalButtonArray[] = '<button class="edit single-only" title="Edit this record"><span class="fas fa-edit"></span></button>';
+      'editPath',
+      'viewPath',
+    ], TRUE);
+    $userId = hostsite_get_user_field('indicia_user_id');
+    $verifyUrl = iform_ajaxproxy_url(self::$nid, 'list_verify');
+    $commentUrl = iform_ajaxproxy_url(self::$nid, 'occ-comment');
+    helper_base::$javascript .= <<<JS
+indiciaData.ajaxFormPostSingleVerify = '$verifyUrl&user_id=$userId&sharing=verification';
+indiciaData.ajaxFormPostComment = '$commentUrl&user_id=$userId&sharing=verification';
+
+JS;
+    $optionalLinkArray = [];
+    if (!empty($options['editPath'])) {
+      $optionalLinkArray[] = '<a class="edit single-only" title="Edit this record"><span class="fas fa-edit"></span></a>';
     }
-    $optionalButtons = implode("\n  ", $optionalButtonArray);
+    if (!empty($options['viewPath'])) {
+      $optionalLinkArray[] = '<a class="view single-only" title="View this record\'s details page"><span class="fas fa-file-invoice"></span></a>';
+    }
+    $optionalLinks = implode("\n  ", $optionalLinkArray);
     helper_base::add_resource('fancybox');
     return <<<HTML
-<div class="verification-buttons-wrap" style="display: none;">
-  <div class="verification-buttons" data-es-output-config="$encodedOptions">
+<div id="$options[id]" class="verification-buttons-wrap" style="display: none;">
+  <div class="verification-buttons" data-es-output-config="$dataOptions">
   Actions:
     <span class="fas fa-toggle-on toggle fa-2x" title="Toggle additional status levels"></span>
     <button class="verify l1" data-status="V" title="Accepted"><span class="far fa-check-circle status-V"></span></button>
@@ -528,7 +648,7 @@ HTML;
     <button class="verify l2" data-status="R5" title="Not accepted :: incorrect"><span class="fas fa-times status-R5"></span></button>
     <span class="sep"></span>
     <button class="query" data-query="Q" title="Query this record"><span class="fas fa-question-circle query-Q"></span></button>
-    $optionalButtons
+    $optionalLinks
   </div>
 </div>
 HTML;
@@ -543,10 +663,15 @@ HTML;
    * * explorePath - path to an Explore all records page that can be used to
    *   show filtered records, e.g. the records underlying the data on the
    *   experience tab. Optional.
+   * * locationTypes - the record details pane will show all indexed location
+   *   types unless you provide an array of the type names that you would
+   *   like included, e.g. ["Country","Vice County"]. Optional.
    */
   protected static function get_control_recordDetails($auth, $args, $tabalias, $options) {
-    self::checkOptions('recordDetails', $options, ['showSelectedRow'], []);
+    self::checkOptions('recordDetails', $options, ['showSelectedRow'], ['locationTypes']);
     if (!empty($options['explorePath'])) {
+      // Build  URL which overrides the default filters applied to many Explore
+      // pages in order to be able to apply out own filter.
       $options['exploreUrl'] = hostsite_get_url(
         $options['explorePath'],
         [
@@ -564,11 +689,11 @@ HTML;
     $dataOptions = self::getOptionsForJs($options, [
       'showSelectedRow',
       'exploreUrl',
-    ]);
-    $encodedOptions = htmlspecialchars($dataOptions);
+      'locationTypes',
+    ], TRUE);
     helper_base::add_resource('tabs');
     return <<<HTML
-<div class="details-container" data-es-output-config="$encodedOptions">
+<div class="details-container" data-es-output-config="$dataOptions">
   <div class="empty-message alert alert-info"><span class="fas fa-info-circle fa-2x"></span>Select a row to view details</div>
   <div class="tabs" style="display: none">
     <ul>
@@ -594,6 +719,87 @@ HTML;
 HTML;
   }
 
+  /**
+   * Retrieve parameters from the URL and add to the ES requests.
+   *
+   * Currently only supports taxon scratchpad list filtering.
+   *
+   * Options can include:
+   * * @taxon_scratchpad_list_id - set to false to disable filtering species by
+   *   a provided scratchpad list ID.
+   *
+   * @return string
+   *   Hidden input HTML which defines the appropriate filters.
+   */
+  protected static function get_control_urlParams($auth, $args, $tabalias, $options) {
+    $options = array_merge([
+      'taxon_scratchpad_list_id' => TRUE,
+      // Other options, e.g. group_id or field params may be added in future.
+    ], $options);
+    $r = '';
+    if (!empty($options['taxon_scratchpad_list_id']) && !empty($_GET['taxon_scratchpad_list_id'])) {
+      // Check the parameter is valid.
+      $taxonScratchpadListId = $_GET['taxon_scratchpad_list_id'];
+      if (!preg_match('/^\d+$/', $taxonScratchpadListId)) {
+        hostsite_show_message(
+          lang::get('The taxon_scratchpad_list_id parameter should be a whole number which is the ID of a scratchpad list.'),
+          'warning'
+        );
+      }
+      // Load the scratchpad's list of taxa.
+      iform_load_helpers(['report_helper']);
+      $listEntries = report_helper::get_report_data([
+        'dataSource' => 'library/taxa/external_keys_for_scratchpad',
+        'readAuth' => $auth['read'],
+        'extraParams' => ['scratchpad_list_id' => $taxonScratchpadListId],
+      ]);
+      // Build a hidden input which causes filtering to this list.
+      $keys = [];
+      foreach ($listEntries as $row) {
+        $keys[] = $row['external_key'];
+      }
+      $keyJson = str_replace('"', '&quot;', json_encode($keys));
+      $r .= <<<HTML
+<input type="hidden" class="es-filter-param" value="$keyJson"
+  data-es-bool-clause="must" data-es-field="taxon.higher_taxon_ids" data-es-query-type="terms" />
+HTML;
+    }
+    return $r;
+  }
+
+  /**
+   * A select box for choosing from a list of higher geography boundaries.
+   *
+   * Lists indexed locations for a given type. When a location is chosen, the
+   * boundary is shown and the ES data is filtered to records which intersect
+   * the boundary.
+   *
+   * Options are:
+   *
+   * * @locationTypeId - ID of the location type of the locations to list. Must
+   *   be a type indexed by the spatial index builder module.
+   *
+   * @return string
+   *   Control HTML
+   */
+  protected static function get_control_higherGeographySelect($auth, $args, $tabalias, $options) {
+    if (empty($options['locationTypeId']) || !preg_match('/^\d+$/', $options['locationTypeId'])) {
+      throw new Exception('An integer @locationTypeId parameter is required for the [higherGeographySelect] control');
+    }
+    $options = array_merge([
+      'id' => 'higher-geography-select',
+    ], $options);
+    return data_entry_helper::location_select([
+      'id' => $options['id'],
+      'class' => 'es-higher-geography-select',
+      'extraParams' => $auth['read'] + [
+        'location_type_id' => $options['locationTypeId'],
+        'orderby' => 'name',
+      ],
+      'blankText' => lang::get('<All locations shown>'),
+    ]);
+  }
+
   private static function getDefinitionFilter($definition, array $params) {
     foreach ($params as $param) {
       if (!empty($definition[$param])) {
@@ -606,7 +812,7 @@ HTML;
     return [];
   }
 
-  private static function applyPermissionsFilter(array $readAuth, array $query, array &$bool) {
+  private static function applyPermissionsFilter(array &$bool) {
     if (!empty($_POST['permissions_filter'])) {
       switch ($_POST['permissions_filter']) {
         case 'my':
@@ -629,7 +835,6 @@ HTML;
         default:
           // All records, no filter.
       }
-
     }
   }
 
@@ -662,6 +867,9 @@ HTML;
           'id' => $userFilter,
         ] + $readAuth,
       ]);
+      if (count($filterData) === 0) {
+        throw new exception("Filter with ID $userFilter could not be loaded.");
+      }
       $definition = json_decode($filterData[0]['definition'], TRUE);
       self::applyUserFiltersWebsiteList($readAuth, $definition, ['website_list', 'website_id'], $bool);
       self::applyUserFiltersSurveyList($readAuth, $definition, ['survey_list', 'survey_id'], $bool);
@@ -960,7 +1168,9 @@ HTML;
       'must_not' => [],
       'filter' => [],
     ];
+    $basicQueryTypes = ['match_all', 'match_none'];
     $fieldQueryTypes = ['term', 'match', 'match_phrase', 'match_phrase_prefix'];
+    $arrayFieldQueryTypes = ['terms'];
     $stringQueryTypes = ['query_string', 'simple_query_string'];
     if (isset($query['filters'])) {
       // Apply any filter row paramenters to the query.
@@ -975,9 +1185,16 @@ HTML;
           str_replace('#value#', $qryConfig['value'], $qryConfig['query']), TRUE
         );
       }
+      elseif (in_array($qryConfig['query_type'], $basicQueryTypes)) {
+        $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => new stdClass()];
+      }
       elseif (in_array($qryConfig['query_type'], $fieldQueryTypes)) {
         // One of the standard ES field based query types (e.g. term or match).
         $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => [$qryConfig['field'] => $qryConfig['value']]];
+      }
+      elseif (in_array($qryConfig['query_type'], $arrayFieldQueryTypes)) {
+        // One of the standard ES field based query types (e.g. term or match).
+        $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => [$qryConfig['field'] => json_decode($qryConfig['value'], TRUE)]];
       }
       elseif (in_array($qryConfig['query_type'], $stringQueryTypes)) {
         // One of the ES query string based query types.
@@ -987,7 +1204,7 @@ HTML;
     }
     unset($query['bool_queries']);
     $readAuth = data_entry_helper::get_read_auth($website_id, $password);
-    self::applyPermissionsFilter($readAuth, $query, $bool);
+    self::applyPermissionsFilter($bool);
     if (!empty($query['user_filters'])) {
       self::applyUserFilters($readAuth, $query, $bool);
     }
@@ -1014,7 +1231,10 @@ HTML;
    * A search proxy that passes through the data as is.
    *
    * Should only be used with aggregations where the size parameter is zero to
-   * avoid permissions issues.
+   * avoid permissions issues, as it does not apply the basic permissions
+   * filter. For example a report page that shows "my records" may also include
+   * aggregated data across the entire dataset which is not limited by the page
+   * permissions.
    */
   public static function ajax_esproxy_rawsearch($website_id, $password, $nid) {
     $params = hostsite_get_node_field_value($nid, 'params');
@@ -1111,7 +1331,6 @@ HTML;
     $session = curl_init($url);
     curl_setopt($session, CURLOPT_POST, 1);
     curl_setopt($session, CURLOPT_POSTFIELDS, json_encode($data));
-    watchdog('post', $url . ': ' . json_encode($data));
     curl_setopt($session, CURLOPT_HTTPHEADER, [
       'Content-Type: application/json',
       "Authorization: USER:$params[user]:SECRET:$params[secret]",
@@ -1141,11 +1360,6 @@ HTML;
 
   protected static function getFirstTabAdditionalContent($args, $auth, &$attributes) {
     return '';
-  }
-
-  private static function getOptionsForJs($options, $keysToPassThrough) {
-    $dataOptions = array_intersect_key($options, array_combine($keysToPassThrough, $keysToPassThrough));
-    return json_encode($dataOptions);
   }
 
 }
