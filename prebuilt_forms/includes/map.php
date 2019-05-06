@@ -108,6 +108,7 @@ function iform_map_get_map_parameters() {
         'bing_hybrid' => 'Bing Hybrid',
         'bing_shaded' => 'Bing Shaded',
         'bing_os' => 'Bing Ordnance Survey',
+        'dynamicOSGoogleSat' => 'Dynamic (OpenStreetMap > Ordnance Survey Leisure > Google Satellite)',
         'osm' => 'OpenStreetMap',
         'otm' => 'OpenTopoMap',
         'os_leisure' => 'OS Leisure',

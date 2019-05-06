@@ -269,6 +269,8 @@ class data_entry_helper extends helper_base {
    *     * termlist_id - If datatype=lookup, then provide the termlist_id of the list to load terms for as options in the
    *       control.
    *     * lookupValues - if using a lookup, provide an associative array as an alternative to a termlist_id.
+   *     * hierarchical - set to true if the termlist is hierarchical. In this case terms shown in the drop down will
+   *       include all the ancestors, e.g. coastal->coastal lagoon, rather than just the child term.
    *     * unit - An optional unit label to display after the control (e.g. 'cm', 'kg').
    *     * regex - A regular expression which validates the controls input value.
    *     * default - default value for this control used for new rows
@@ -321,15 +323,31 @@ class data_entry_helper extends helper_base {
         // No matter if the lookup comes from the db, or from a local array,
         // we want it in the same minimal format.
         if (!empty($def['termlist_id'])) {
-          $termlistData = self::get_population_data(array(
-            'table' => 'termlists_term',
-            'extraParams' => $options['extraParams'] + array(
-              'termlist_id' => $def['termlist_id'],
-              'view' => 'cache',
-              'orderby' => isset($def['orderby']) ? $def['orderby'] : 'term',
-              'allow_data_entry' => 't',
-            ),
-          ));
+          if (empty($def['hierarchical'])) {
+            $termlistData = self::get_population_data([
+              'table' => 'termlists_term',
+              'extraParams' => $options['extraParams'] + [
+                'termlist_id' => $def['termlist_id'],
+                'view' => 'cache',
+                'orderby' => isset($def['orderby']) ? $def['orderby'] : 'sort_order,term',
+                'allow_data_entry' => 't',
+              ],
+            ]);
+          }
+          else {
+            $termlistData = self::get_report_data([
+              'dataSource' => '/library/terms/terms_list_with_hierarchy',
+              'extraParams' => [
+                'termlist_id' => $def['termlist_id'],
+              ],
+              'readAuth' => [
+                'auth_token' => $options['extraParams']['auth_token'],
+                'nonce' => $options['extraParams']['nonce'],
+              ],
+              'caching' => TRUE,
+              'cachePerUser' => FALSE,
+            ]);
+          }
           foreach ($termlistData as $term) {
             $minified[] = array($term['id'], $term['term']);
           }
@@ -1393,7 +1411,7 @@ JS;
         // Not a top level item, so put in a data array we can store in JSON.
         // Use the mappings from preferred ID to ID in this language to ensure
         // the parents can be found.
-        if (!isset($childData[$item['parent_id']])) {
+        if (!isset($childData[$prefMappings[$item['parent_id']]])) {
           $childData[$prefMappings[$item['parent_id']]] = array();
         }
         $childData[$prefMappings[$item['parent_id']]][] = array(
@@ -4524,7 +4542,10 @@ JS;
         'class' => $class,
         'controlWrapTemplate' => 'justControl',
         'extraParams' => $options['readAuth'],
-        'language' => $options['language'] // required for lists eg radio boxes: kept separate from options extra params as that is used to indicate filtering of species list by language
+        // Required for lists eg radio boxes: kept separate from options extra
+        // params as that is used to indicate filtering of species list by
+        // language
+        'language' => isset($options['language']) ? $options['language'] : '',
       );
       // Some undocumented checklist options that are applied to all attributes
       if(isset($options['lookUpKey'])) $ctrlOptions['lookUpKey'] = $options['lookUpKey'];
@@ -4688,44 +4709,43 @@ HTML;
    */
   public static function textarea($options) {
     $options = array_merge(array(
-      'cols'=>'80',
-      'rows'=>'4',
-      'isFormControl' => true
+      'cols' => '80',
+      'rows' => '4',
+      'isFormControl' => TRUE,
     ), self::check_options($options));
     return self::apply_template('textarea', $options);
   }
 
   /**
-   * Helper function to output an HTML text input. This includes re-loading of existing values
-   * and displaying of validation error messages.
+   * Helper function to output an HTML text input.
    *
-   * @param array $options Options array with the following possibilities:<ul>
-   * <li><b>fieldname</b><br/>
-   * Required. The name of the database field this control is bound to.</li>
-   * <li><b>id</b><br/>
-   * Optional. The id to assign to the HTML control. If not assigned the fieldname is used.</li>
-   * <li><b>default</b><br/>
-   * Optional. The default value to assign to the control. This is overridden when reloading a
-   * record with existing data for this control.</li>
-   * <li><b>class</b><br/>
-   * Optional. CSS class names to add to the control.</li>
-   * <li><b>readonly</b><br/>
-   * Optional. can be set to 'readonly="readonly"' to set this control as read only.</li>
-   * </ul>
-   * The output of this control can be configured using the following templates:
-   * <ul>
-   * <li><b>text_input</b></br>
-   * HTML template used to generate the input element.
-   * </li>
-   * </ul>
+   * This includes re-loading of existing values and displaying of validation
+   * error messages.
    *
-   * @return string HTML to insert into the page for the text input control.
+   * @param array $options Options array with the following possibilities:
+   *   * fieldname - Required. The name of the database field this control is
+   *     bound to.
+   *   * id - Optional. The id to assign to the HTML control. If not assigned
+   *     the fieldname is used.
+   *   * default - Optional. The default value to assign to the control. This
+   *     is overridden when reloading a record with existing data for this
+   *     control.
+   *   * class - Optional. CSS class names to add to the control.
+   *   * readonly - Optional. can be set to 'readonly="readonly"' to set this
+   *     control as read only.
+   *
+   * The output of this control can be configured using the following
+   * templates:
+   * * text_input - HTML template used to generate the input element.
+   *
+   * @return string
+   *   HTML to insert into the page for the text input control.
    */
   public static function text_input($options) {
-    $options = array_merge(array(
-      'default'=>'',
-      'isFormControl' => true
-    ), self::check_options($options));
+    $options = array_merge([
+      'default' => '',
+      'isFormControl' => TRUE,
+    ], self::check_options($options));
     return self::apply_template('text_input', $options);
   }
 
@@ -7648,7 +7668,7 @@ TXT;
       $attrOptions['class'] = (empty($attrOptions['class']) ? '' : "$attrOptions[class] ") . "system-function-$item[system_function]";
     }
     if(isset($item['default']) && $item['default']!="")
-      $attrOptions['default']= $item['default'];
+      $attrOptions['default'] = $item['default'];
     //the following two lines are a temporary fix to allow a control_type to be specified via the form's user interface form structure
     if(isset($attrOptions['control_type']) && $attrOptions['control_type']!="")
       $item['control_type']= $attrOptions['control_type'];

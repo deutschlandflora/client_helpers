@@ -28,8 +28,11 @@ require_once 'includes/dynamic.php';
  */
 class iform_dynamic_elasticsearch extends iform_dynamic {
 
-  private static $esMappings;
-
+  /**
+   * Count controls to make unique IDs.
+   *
+   * @var integer
+   */
   private static $controlIndex = 0;
 
   /**
@@ -48,7 +51,7 @@ class iform_dynamic_elasticsearch extends iform_dynamic {
   public static function get_dynamic_elasticsearch_definition() {
     $description = <<<HTML
 Provides a dynamically output page which links to an index of occurrence data in an <a href="https://www.elastic.co">
-Elasticseach</a> cluster.
+Elasticsearch</a> cluster.
 This page can generate controls for the following:
 <ul>
   <li>filtering</li>
@@ -102,23 +105,29 @@ TXT;
       [
         'name' => 'endpoint',
         'caption' => 'Endpoint',
-        'description' => 'Elasticsearch endpoint declared in the REST API.',
+        'description' => 'Elasticsearch endpoint declared in the REST API. Alternatively, leave this blank to use ' .
+          'the site wide setting on the Indicia configuration settings page.',
         'type' => 'text_input',
         'group' => 'Elasticsearch settings',
+        'required' => FALSE,
       ],
       [
         'name' => 'user',
         'caption' => 'User',
-        'description' => 'REST API user with Elasticsearch access.',
+        'description' => 'REST API user with Elasticsearch access. Alternatively, leave this blank to use ' .
+          'the site wide setting on the Indicia configuration settings page.',
         'type' => 'text_input',
         'group' => 'Elasticsearch settings',
+        'required' => FALSE,
       ],
       [
         'name' => 'secret',
         'caption' => 'Secret',
-        'description' => 'REST API user secret.',
+        'description' => 'REST API user secret. Alternatively, leave this blank to use ' .
+          'the site wide setting on the Indicia configuration settings page.',
         'type' => 'text_input',
         'group' => 'Elasticsearch settings',
+        'required' => FALSE,
       ],
       [
         'name' => 'warehouse_prefix',
@@ -202,24 +211,13 @@ TXT;
    *   Node ID.
    */
   public static function get_form($args, $nid) {
-    // Retrieve the Elasticsearch mappings.
-    self::getMappings($nid);
-    // Prepare the stuff we need to pass to the JavaScript.
-    $mappings = json_encode(self::$esMappings);
+    require_once helper_base::client_helper_path() . 'ElasticsearchProxyHelper.php';
+    ElasticsearchProxyHelper::enableElasticsearchProxy($nid);
     $ajaxUrl = hostsite_get_url('iform/ajax/dynamic_elasticsearch');
-    $userId = hostsite_get_user_field('indicia_user_id');
-    $rootFolder = helper_base::getRootFolder(TRUE);
-    $dateFormat = helper_base::$date_format;
     data_entry_helper::$javascript .= <<<JS
 indiciaData.ajaxUrl = '$ajaxUrl';
-indiciaData.esSources = [];
-indiciaData.esMappings = $mappings;
-indiciaData.userId = $userId;
-indiciaData.rootFolder = '$rootFolder';
-indiciaData.dateFormat = '$dateFormat';
 
 JS;
-    helper_base::add_resource('font_awesome');
     $r = parent::get_form($args, $nid);
     // The following function must fire after the page content is built.
     data_entry_helper::$onload_javascript .= <<<JS
@@ -230,89 +228,10 @@ JS;
   }
 
   /**
-   * Converts nested mappings data from ES to a flat field list.
-   *
-   * ES returns the mappings for an index as a hierarchical structure
-   * representing the JSON document fields. This recursive function converts
-   * this structure to a flat associative array of fields and field
-   * configuration where the keys are the field names with their parent
-   * elements separated by periods.
-   *
-   * @param array $data
-   *   Mappings data structure retrieved from ES.
-   * @param array $mappings
-   *   Array which will be populated by the field list.
-   * @param array $path
-   *   Array of parent fields which define the path to the current element.
-   */
-  private static function recurseMappings(array $data, array &$mappings, array $path = []) {
-    foreach ($data as $field => $config) {
-      $thisPath = array_merge($path, [$field]);
-      if (isset($config['properties'])) {
-        self::recurseMappings($config['properties'], $mappings, $thisPath);
-      }
-      else {
-        $field = implode('.', $thisPath);
-        $mappings[$field] = [
-          'type' => $config['type'],
-        ];
-        // We can't sort on text unless a keyword is specified.
-        if (isset($config['fields']) && isset($config['fields']['keyword'])) {
-          $mappings[$field]['sort_field'] = "$field.keyword";
-        }
-        elseif ($config['type'] !== 'text') {
-          $mappings[$field]['sort_field'] = $field;
-        }
-        else {
-          // Disable sorting.
-          $mappings[$field]['sort_field'] = FALSE;
-        }
-      }
-    }
-  }
-
-  /**
-   * Retrieves the ES index mappings data.
-   *
-   * A list of mapped fields is stored in self::$esMappings.
-   *
-   * @param int $nid
-   *   Node ID, used to retrieve the node parameters which contain ES settings.
-   */
-  private static function getMappings($nid) {
-    $params = hostsite_get_node_field_value($nid, 'params');
-    $url = helper_base::$base_url . 'index.php/services/rest/' . $params['endpoint'] . '/_mapping/doc';
-    $session = curl_init($url);
-    curl_setopt($session, CURLOPT_HTTPHEADER, [
-      'Content-Type: application/json',
-      "Authorization: USER:$params[user]:SECRET:$params[secret]",
-    ]);
-    curl_setopt($session, CURLOPT_REFERER, $_SERVER['HTTP_HOST']);
-    curl_setopt($session, CURLOPT_SSL_VERIFYPEER, FALSE);
-    curl_setopt($session, CURLOPT_HEADER, FALSE);
-    curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
-    // Do the POST and then close the session.
-    $response = curl_exec($session);
-    $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
-    if ($httpCode !== 200) {
-      $error = json_decode($response, TRUE);
-      $msg = !empty($error['message'])
-        ? $error['message']
-        : curl_errno($session) . ': ' . curl_error($session);
-      throw new Exception(lang::get('An error occurred whilst connecting to Elasticsearch. {1}', $msg));
-
-    }
-    curl_close($session);
-    $mappingData = json_decode($response, TRUE);
-    $mappingData = array_pop($mappingData);
-    $mappings = [];
-    self::recurseMappings($mappingData['mappings']['doc']['properties'], $mappings);
-    self::$esMappings = $mappings;
-  }
-
-  /**
    * Provide common option handling for controls.
    *
+   * * If attachToId specified, ensures that the control ID is set to the same
+   *   value.
    * * Sets a unique ID for the control if not already set.
    * * Checks that required options are all populated.
    * * Checks that options which should contain JSON do so.
@@ -330,9 +249,19 @@ JS;
    */
   private static function checkOptions($controlName, array &$options, array $requiredOptions, array $jsonOptions) {
     self::$controlIndex++;
-    $options = array_merge([
-      'id' => "es-$controlName-" . self::$controlIndex,
-    ], $options);
+    if (!empty($options['attachToId'])) {
+      if (!empty($options['id']) && $options['id'] !== $options['attachToId']) {
+        throw new Exception("Control ID $options[id] @attachToId does not match the @id option value.");
+      }
+      // If attaching to an existing element, force the ID.
+      $options['id'] = $options['attachToId'];
+    }
+    else {
+      // Otherwise, generate a unique ID if not defined.
+      $options = array_merge([
+        'id' => "idc-$controlName-" . self::$controlIndex,
+      ], $options);
+    }
     // Fail if duplicate ID on page.
     if (in_array($options['id'], self::$controlIds)) {
       throw new Exception("Control ID $options[id] is duplicated in the page configuration");
@@ -366,7 +295,7 @@ JS;
    */
   protected static function get_control_source($auth, $args, $tabalias, $options) {
     self::checkOptions(
-      'source',
+      'esSource',
       $options,
       ['id'],
       ['aggregation', 'filterBoolClauses', 'buildTableXY', 'sort']
@@ -376,6 +305,7 @@ JS;
       'from',
       'size',
       'sort',
+      'filterPath',
       'aggregation',
       'buildTableXY',
       'initialMapBounds',
@@ -475,8 +405,16 @@ HTML;
     }
   }
 
+  /**
+   * A button for downloading the ES data from a source.
+   *
+   * @return string
+   *   HTML for download button and progress display.
+   *
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[download]
+   */
   protected static function get_control_download($auth, $args, $tabalias, $options) {
-    self::checkOptions('download', $options, ['source'], []);
+    self::checkOptions('esDownload', $options, ['source'], []);
     global $indicia_templates;
     $r = str_replace(
       [
@@ -485,7 +423,7 @@ HTML;
         '{class}',
         '{caption}',
       ], [
-        '',
+        $options['id'],
         lang::get('Run the download'),
         "class=\"$indicia_templates[buttonHighlightedClass] do-download\"",
         lang::get('Download'),
@@ -493,7 +431,7 @@ HTML;
       $indicia_templates['button']
     );
     $progress = <<<HTML
-<div class="progress-container">
+<div class="progress-circle-container">
   <svg>
     <circle class="circle"
             cx="-90"
@@ -518,22 +456,21 @@ HTML;
       [
         '',
         $progress,
-        '<div class="files"><h2>' . lang::get('Files') . ':</h2></div>',
+        '<div class="idc-download-files"><h2>' . lang::get('Files') . ':</h2></div>',
       ],
       $indicia_templates['two-col-50']);
     // This does nothing at the moment - just a placeholder for if and when we
     // add some download options.
-    $dataOptions = self::getOptionsForJs($options, [], TRUE);
-    return <<<HTML
-<div id="$options[id]" class="es-output es-output-download" data-es-source="$source" data-es-output-config="$dataOptions">
-  $r
-</div>
+    $dataOptions = self::getOptionsForJs($options, ['source'], empty($options['attachToId']));
+    helper_base::$javascript .= <<<JS
+$('#$options[id]').idcEsDownload({});
 
-HTML;
+JS;
+    return self::getControlContainer('esDownload', $options, $dataOptions, $r);
   }
 
   /**
-   * An Elasticsearch powered grid control.
+   * An Elasticsearch or Indicia powered grid control.
    *
    * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[dataGrid]
    */
@@ -555,6 +492,7 @@ HTML;
     // Fancybox for image popups.
     helper_base::add_resource('fancybox');
     $dataOptions = self::getOptionsForJs($options, [
+      'source',
       'columns',
       'actions',
       'includeColumnHeadings',
@@ -564,42 +502,118 @@ HTML;
       'simpleAggregation',
       'sourceTable',
       'autogenColumns',
-    ], TRUE);
-    // Escape the source so it can output as an attribute.
-    $source = str_replace('"', '&quot;', json_encode($options['source']));
-    return <<<HTML
-<div id="$options[id]" class="es-output es-output-dataGrid" data-es-source="$source" data-es-output-config="$dataOptions"></div>
+    ], empty($options['attachToId']));
+    helper_base::$javascript .= <<<JS
+$('#$options[id]').idcDataGrid({});
 
-HTML;
+JS;
+    return self::getControlContainer('dataGrid', $options, $dataOptions);
   }
 
+  /**
+   * An Elasticsearch or Indicia powered map control.
+   *
+   * @deprecated Use leafletMap instead.
+   *
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[map]
+   */
   protected static function get_control_map($auth, $args, $tabalias, $options) {
-    self::checkOptions('map', $options, ['source'], ['styles']);
+    return self::get_control_leafletMap($auth, $args, $tabalias, $options);
+  }
+
+  /**
+   * An Elasticsearch or Indicia data powered Leaflet map control.
+   *
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[leafletMap]
+   */
+  protected static function get_control_leafletMap($auth, $args, $tabalias, $options) {
+    self::checkOptions('leafletMap', $options, ['source'], ['styles']);
     $options = array_merge([
       'styles' => new stdClass(),
     ], $options);
     helper_base::add_resource('leaflet');
     $dataOptions = self::getOptionsForJs($options, [
+      'source',
       'styles',
       'showSelectedRow',
       'initialLat',
       'initialLng',
       'initialZoom',
       'cookies',
-    ], TRUE);
+    ], empty($options['attachToId']));
+    helper_base::$javascript .= <<<JS
+$('#$options[id]').idcLeafletMap({});
+$('#$options[id]').idcLeafletMap('bindGrids');
+
+JS;
+    return self::getControlContainer('leafletMap', $options, $dataOptions);
+  }
+
+  /**
+   * A control for flexibly outputting data formatted using HTML templates.
+   *
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[templatedOutput]
+   */
+  protected static function get_control_templatedOutput($auth, $args, $tabalias, $options) {
+    self::checkOptions('templatedOutput', $options, ['source', 'content'], []);
+    $dataOptions = self::getOptionsForJs($options, [
+      'source',
+      'content',
+      'header',
+      'footer',
+      'repeatField',
+    ], empty($options['attachToId']));
+    helper_base::$javascript .= <<<JS
+$('#$options[id]').idcTemplatedOutput({});
+
+JS;
+    return self::getControlContainer('templatedOutput', $options, $dataOptions);
+  }
+
+  /**
+   * Returns the HTML required to act as a control container.
+   *
+   * Creates the common HTML strucuture required to wrap any data output
+   * control. If the control's @attachToId option is set then sets the
+   * required JavaScript to make the control inject itself into the existing
+   * element instead.
+   *
+   * @param string $controlName
+   * @param array $options
+   * @param string $dataOptions
+   * @param string $content
+   *
+   * @return string
+   *   Control HTML.
+   */
+  private static function getControlContainer($controlName, array $options, $dataOptions, $content='') {
+    if (!empty($options['attachToId'])) {
+      $source = json_encode($options['source']);
+      // Use JS to attach to an existing element.
+      helper_base::$javascript .= <<<JS
+$('#$options[attachToId]')
+  .addClass('idc-output')
+  .addClass("idc-output-$controlName")
+  .attr('data-idc-esSource', '$source')
+  .attr('data-idc-output-config', '$dataOptions');
+
+JS;
+      return '';
+    }
     // Escape the source so it can output as an attribute.
     $source = str_replace('"', '&quot;', json_encode($options['source']));
-
     return <<<HTML
-<div id="$options[id]" class="es-output es-output-map" data-es-source="$source" data-es-output-config="$dataOptions"></div>
+<div id="$options[id]" class="idc-output idc-output-$controlName" data-idc-config="$dataOptions">
+  $content
+</div>
 
 HTML;
   }
 
   /**
-   * A panel containin buttons for record verification actions.
+   * A panel containing buttons for record verification actions.
    *
-   * @link
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[verificationButtons]
    *
    * @return string
    *   Panel HTML;
@@ -623,32 +637,38 @@ HTML;
     helper_base::$javascript .= <<<JS
 indiciaData.ajaxFormPostSingleVerify = '$verifyUrl&user_id=$userId&sharing=verification';
 indiciaData.ajaxFormPostComment = '$commentUrl&user_id=$userId&sharing=verification';
+$('#$options[id]').idcVerificationButtons({});
 
 JS;
     $optionalLinkArray = [];
     if (!empty($options['editPath'])) {
-      $optionalLinkArray[] = '<a class="edit single-only" title="Edit this record"><span class="fas fa-edit"></span></a>';
+      $optionalLinkArray[] = '<a class="edit" title="Edit this record"><span class="fas fa-edit"></span></a>';
     }
     if (!empty($options['viewPath'])) {
-      $optionalLinkArray[] = '<a class="view single-only" title="View this record\'s details page"><span class="fas fa-file-invoice"></span></a>';
+      $optionalLinkArray[] = '<a class="view" title="View this record\'s details page"><span class="fas fa-file-invoice"></span></a>';
     }
     $optionalLinks = implode("\n  ", $optionalLinkArray);
     helper_base::add_resource('fancybox');
     return <<<HTML
-<div id="$options[id]" class="verification-buttons-wrap" style="display: none;">
-  <div class="verification-buttons" data-es-output-config="$dataOptions">
-  Actions:
-    <span class="fas fa-toggle-on toggle fa-2x" title="Toggle additional status levels"></span>
-    <button class="verify l1" data-status="V" title="Accepted"><span class="far fa-check-circle status-V"></span></button>
-    <button class="verify l2" data-status="V1" title="Accepted :: correct"><span class="fas fa-check-double status-V1"></span></button>
-    <button class="verify l2" data-status="V2" title="Accepted :: considered correct"><span class="fas fa-check status-V2"></span></button>
-    <button class="verify" data-status="C3" title="Plausible"><span class="fas fa-check-square status-C3"></span></button>
-    <button class="verify l1" data-status="R" title="Not accepted"><span class="far fa-times-circle status-R"></span></button>
-    <button class="verify l2" data-status="R4" title="Not accepted :: unable to verify"><span class="fas fa-times status-R4"></span></button>
-    <button class="verify l2" data-status="R5" title="Not accepted :: incorrect"><span class="fas fa-times status-R5"></span></button>
-    <span class="sep"></span>
-    <button class="query" data-query="Q" title="Query this record"><span class="fas fa-question-circle query-Q"></span></button>
-    $optionalLinks
+<div id="$options[id]" class="idc-verification-buttons" style="display: none;" data-idc-config="$dataOptions">
+    <div class="selection-buttons-placeholder">
+      <div class="all-selected-buttons idc-verification-buttons-row">
+        Actions:
+        <span class="fas fa-toggle-on toggle fa-2x" title="Toggle additional status levels"></span>
+        <button class="verify l1" data-status="V" title="Accepted"><span class="far fa-check-circle status-V"></span></button>
+        <button class="verify l2" data-status="V1" title="Accepted :: correct"><span class="far fa-check-double status-V1"></span></button>
+        <button class="verify l2" data-status="V2" title="Accepted :: considered correct"><span class="fas fa-check status-V2"></span></button>
+        <button class="verify" data-status="C3" title="Plausible"><span class="fas fa-check-square status-C3"></span></button>
+        <button class="verify l1" data-status="R" title="Not accepted"><span class="far fa-times-circle status-R"></span></button>
+        <button class="verify l2" data-status="R4" title="Not accepted :: unable to verify"><span class="fas fa-times status-R4"></span></button>
+        <button class="verify l2" data-status="R5" title="Not accepted :: incorrect"><span class="fas fa-times status-R5"></span></button>
+        <span class="sep"></span>
+        <button class="query" data-query="Q" title="Raise a query"><span class="fas fa-question-circle query-Q"></span></button>
+      </div>
+    </div>
+    <div class="single-record-buttons idc-verification-buttons-row">
+      $optionalLinks
+    </div>
   </div>
 </div>
 HTML;
@@ -657,15 +677,10 @@ HTML;
   /**
    * A tabbed control to show full record details and verification info.
    *
-   * Supports the following options:
-   * * showSelectedRow - ID of the grid whose selected row should be shown.
-   *   Required.
-   * * explorePath - path to an Explore all records page that can be used to
-   *   show filtered records, e.g. the records underlying the data on the
-   *   experience tab. Optional.
-   * * locationTypes - the record details pane will show all indexed location
-   *   types unless you provide an array of the type names that you would
-   *   like included, e.g. ["Country","Vice County"]. Optional.
+   * @return string
+   *   Control HTML.
+   *
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[recordDetails]
    */
   protected static function get_control_recordDetails($auth, $args, $tabalias, $options) {
     self::checkOptions('recordDetails', $options, ['showSelectedRow'], ['locationTypes']);
@@ -689,11 +704,15 @@ HTML;
     $dataOptions = self::getOptionsForJs($options, [
       'showSelectedRow',
       'exploreUrl',
-      'locationTypes',
+      'locationTypes'
     ], TRUE);
     helper_base::add_resource('tabs');
+    helper_base::$javascript .= <<<JS
+$('#$options[id]').idcRecordDetailsPane({});
+
+JS;
     return <<<HTML
-<div class="details-container" data-es-output-config="$dataOptions">
+<div class="details-container" id="$options[id]" data-idc-config="$dataOptions">
   <div class="empty-message alert alert-info"><span class="fas fa-info-circle fa-2x"></span>Select a row to view details</div>
   <div class="tabs" style="display: none">
     <ul>
@@ -800,308 +819,6 @@ HTML;
     ]);
   }
 
-  private static function getDefinitionFilter($definition, array $params) {
-    foreach ($params as $param) {
-      if (!empty($definition[$param])) {
-        return [
-          'value' => $definition[$param],
-          'op' => empty($definition[$param . '_op']) ? FALSE : $definition[$param . '_op'],
-        ];
-      }
-    }
-    return [];
-  }
-
-  private static function applyPermissionsFilter(array &$bool) {
-    if (!empty($_POST['permissions_filter'])) {
-      switch ($_POST['permissions_filter']) {
-        case 'my':
-          $bool['must'][] = [
-            'term' => ['metadata.created_by_id' => hostsite_get_user_field('indicia_user_id')],
-          ];
-          break;
-
-        case 'location_collation':
-          $bool['must'][] = [
-            'nested' => [
-              'path' => 'location.higher_geography',
-              'query' => [
-                'term' => ['location.higher_geography.id' => hostsite_get_user_field('location_collation')],
-              ],
-            ],
-          ];
-          break;
-
-        default:
-          // All records, no filter.
-      }
-    }
-  }
-
-  /**
-   * Converts Indicia style filters in proxy request to ES query syntax.
-   *
-   * Support for filter definitions is incomplete. Currently only the following
-   * parameters are converted:
-   * * website_list & website_list_op
-   * * survey_list & survey_list_op
-   * * group_id
-   * * taxon_group_list
-   * * higher_taxa_taxon_list_list
-   * * taxa_taxon_list_list
-   * * indexed_location_list & indexed_location_list_op.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $query
-   *   Query passed in proxy request, which may contain an array of
-   *   user_filters (filter IDs) to convert.
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFilters(array $readAuth, array $query, array &$bool) {
-    foreach ($query['user_filters'] as $userFilter) {
-      $filterData = data_entry_helper::get_population_data([
-        'table' => 'filter',
-        'extraParams' => [
-          'id' => $userFilter,
-        ] + $readAuth,
-      ]);
-      if (count($filterData) === 0) {
-        throw new exception("Filter with ID $userFilter could not be loaded.");
-      }
-      $definition = json_decode($filterData[0]['definition'], TRUE);
-      self::applyUserFiltersWebsiteList($readAuth, $definition, ['website_list', 'website_id'], $bool);
-      self::applyUserFiltersSurveyList($readAuth, $definition, ['survey_list', 'survey_id'], $bool);
-      self::applyUserFiltersGroupId($readAuth, $definition, ['group_id'], $bool);
-      self::applyUserFiltersTaxonGroupList($readAuth, $definition, ['taxon_group_list', 'taxon_group_id'], $bool);
-      self::applyUserFiltersTaxaTaxonList($readAuth, $definition, [
-        'taxa_taxon_list_list',
-        'higher_taxa_taxon_list_list',
-        'taxa_taxon_list_id',
-        'higher_taxa_taxon_list_id',
-      ], $bool);
-      self::applyUserFiltersTaxonRankSortOrder($readAuth, $definition, ['taxon_rank_sort_order'], $bool);
-      self::applyUserFiltersIndexedLocationList($readAuth, $definition, [
-        'indexed_location_list',
-        'indexed_location_id',
-      ], $bool);
-      self::applyUserFiltersHasPhotos($readAuth, $definition, ['has_photos'], $bool);
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition website_list to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersWebsiteList(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $boolClause = !empty($filter['op']) && $filter['op'] === 'not in' ? 'must_not' : 'must';
-      $bool[$boolClause][] = [
-        'terms' => ['metadata.website.id' => explode(',', $filter['value'])],
-      ];
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition survey_list to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersSurveyList(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $boolClause = !empty($filter['op']) && $filter['op'] === 'not in' ? 'must_not' : 'must';
-      $bool[$boolClause][] = [
-        'terms' => ['metadata.survey.id' => explode(',', $filter['value'])],
-      ];
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition group_id to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersGroupId(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $bool['must'][] = [
-        'terms' => ['metadata.group.id' => explode(',', $filter['value'])],
-      ];
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition taxon_group_list to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersTaxonGroupList(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $bool['must'][] = [
-        'terms' => ['taxon.group_id' => explode(',', $filter['value'])],
-      ];
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition taxa_taxon_list_list to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersTaxaTaxonList(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $taxonData = data_entry_helper::get_population_data([
-        'table' => 'taxa_taxon_list',
-        'extraParams' => [
-          'view' => 'cache',
-          'query' => json_encode(['in' => ['id' => explode(',', $filter['value'])]]),
-        ] + $readAuth,
-      ]);
-      $keys = [];
-      foreach ($taxonData as $taxon) {
-        $keys[] = $taxon['external_key'];
-      }
-      $bool['must'][] = ['terms' => ['taxon.higher_taxon_ids' => $keys]];
-    }
-  }
-
-  /**
-   * Converts a filter definition taxon_rank_sort_order filter to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersTaxonRankSortOrder(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    // Filter op can be =, >= or <=.
-    if (!empty($filter)) {
-      if ($filter['op'] === '=') {
-        $bool['must'][] = [
-          'match' => [
-            'taxon.taxon_rank_sort_order' => [
-              'query' => $filter['value'],
-              'type' => 'phrase',
-            ],
-          ],
-        ];
-      }
-      else {
-        $gte = $filter['op'] === '>=' ? $filter['value'] : NULL;
-        $lte = $filter['op'] === '<=' ? $filter['value'] : NULL;
-        $bool['must'][] = [
-          'range' => [
-            'taxon.taxon_rank_sort_order' => [
-              'gte' => $gte,
-              'lte' => $lte,
-            ],
-          ],
-        ];
-      }
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition indexed_location_list to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersIndexedLocationList(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $boolClause = $filter['value'] === '0' ? 'must_not' : 'must';
-      $bool[$boolClause][] = [
-        'nested' => [
-          'path' => 'location.higher_geography',
-          'query' => [
-            'terms' => ['location.higher_geography.id' => explode(',', $filter['value'])],
-          ],
-        ],
-      ];
-    }
-  }
-
-  /**
-   * Converts an Indicia filter definition has_photos filter to an ES query.
-   *
-   * @param array $readAuth
-   *   Read authentication tokens.
-   * @param array $definition
-   *   Definition loaded for the Indicia filter.
-   * @param array $params
-   *   List of parameter names that can be used for this type of filter
-   *   (allowing for deprecated names etc).
-   * @param array $bool
-   *   Bool clauses that filters can be added to (e.g. $bool['must']).
-   */
-  private static function applyUserFiltersHasPhotos(array $readAuth, array $definition, array $params, array &$bool) {
-    $filter = self::getDefinitionFilter($definition, $params);
-    if (!empty($filter)) {
-      $boolClause = !empty($filter['op']) && $filter['op'] === 'not in' ? 'must_not' : 'must';
-      $bool[$boolClause][] = ['exists' => ['field' => 'occurrence.associated_media']];
-    }
-  }
-
   /**
    * Ajax method which echoes custom attribute data to the client.
    *
@@ -1116,7 +833,7 @@ HTML;
   public static function ajax_attrs($website_id, $password) {
     $readAuth = report_helper::get_read_auth($website_id, $password);
     $options = array(
-      'dataSource' => 'reports_for_prebuilt_forms/verification_3/record_data_attributes',
+      'dataSource' => 'reports_for_prebuilt_forms/dynamic_elasticsearch/record_details',
       'readAuth' => $readAuth,
       // @todo Sharing should be dynamically set in a form parameter (use $nid param).
       'sharing' => 'verification',
@@ -1157,197 +874,6 @@ HTML;
     $reportData = report_helper::get_report_data($options);
     header('Content-type: application/json');
     echo json_encode($reportData);
-  }
-
-  private static function buildEsQueryFromRequest($website_id, $password) {
-    $query = array_merge($_POST);
-    unset($query['warehouse_url']);
-    $bool = [
-      'must' => [],
-      'should' => [],
-      'must_not' => [],
-      'filter' => [],
-    ];
-    $basicQueryTypes = ['match_all', 'match_none'];
-    $fieldQueryTypes = ['term', 'match', 'match_phrase', 'match_phrase_prefix'];
-    $arrayFieldQueryTypes = ['terms'];
-    $stringQueryTypes = ['query_string', 'simple_query_string'];
-    if (isset($query['filters'])) {
-      // Apply any filter row paramenters to the query.
-      foreach ($query['filters'] as $field => $value) {
-        $bool['must'][] = ['match_phrase_prefix' => [$field => $value]];
-      }
-      unset($query['filters']);
-    }
-    foreach ($query['bool_queries'] as $qryConfig) {
-      if (!empty($qryConfig['query'])) {
-        $bool[$qryConfig['bool_clause']][] = json_decode(
-          str_replace('#value#', $qryConfig['value'], $qryConfig['query']), TRUE
-        );
-      }
-      elseif (in_array($qryConfig['query_type'], $basicQueryTypes)) {
-        $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => new stdClass()];
-      }
-      elseif (in_array($qryConfig['query_type'], $fieldQueryTypes)) {
-        // One of the standard ES field based query types (e.g. term or match).
-        $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => [$qryConfig['field'] => $qryConfig['value']]];
-      }
-      elseif (in_array($qryConfig['query_type'], $arrayFieldQueryTypes)) {
-        // One of the standard ES field based query types (e.g. term or match).
-        $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => [$qryConfig['field'] => json_decode($qryConfig['value'], TRUE)]];
-      }
-      elseif (in_array($qryConfig['query_type'], $stringQueryTypes)) {
-        // One of the ES query string based query types.
-        $bool[$qryConfig['bool_clause']][] = [$qryConfig['query_type'] => ['query' => $qryConfig['value']]];
-      }
-
-    }
-    unset($query['bool_queries']);
-    $readAuth = data_entry_helper::get_read_auth($website_id, $password);
-    self::applyPermissionsFilter($bool);
-    if (!empty($query['user_filters'])) {
-      self::applyUserFilters($readAuth, $query, $bool);
-    }
-    unset($query['user_filters']);
-    unset($query['permissions_filter']);
-    $bool = array_filter($bool, function ($k) {
-      return count($k) > 0;
-    });
-    if (!empty($bool)) {
-      $query['query'] = ['bool' => $bool];
-    }
-    return $query;
-  }
-
-  public static function ajax_esproxy_searchbyparams($website_id, $password, $nid) {
-    $params = hostsite_get_node_field_value($nid, 'params');
-    self::checkPermissionsFilter($params);
-    $url = $_POST['warehouse_url'] . 'index.php/services/rest/' . $params['endpoint'] . '/_search';
-    $query = self::buildEsQueryFromRequest($website_id, $password);
-    self::curlPost($url, $query, $params);
-  }
-
-  /**
-   * A search proxy that passes through the data as is.
-   *
-   * Should only be used with aggregations where the size parameter is zero to
-   * avoid permissions issues, as it does not apply the basic permissions
-   * filter. For example a report page that shows "my records" may also include
-   * aggregated data across the entire dataset which is not limited by the page
-   * permissions.
-   */
-  public static function ajax_esproxy_rawsearch($website_id, $password, $nid) {
-    $params = hostsite_get_node_field_value($nid, 'params');
-    $url = $_POST['warehouse_url'] . 'index.php/services/rest/' . $params['endpoint'] . '/_search';
-    $query = array_merge($_POST);
-    unset($query['warehouse_url']);
-    $query['size'] = 0;
-    self::curlPost($url, $query, $params);
-  }
-
-  /**
-   * A search proxy that handles build of a CSV download file.
-   */
-  public static function ajax_esproxy_download($website_id, $password, $nid) {
-    $params = hostsite_get_node_field_value($nid, 'params');
-    self::checkPermissionsFilter($params);
-    $url = $_POST['warehouse_url'] . 'index.php/services/rest/' . $params['endpoint'] . '/_search?format=csv';
-    $query = self::buildEsQueryFromRequest($website_id, $password);
-    $initialScroll = !array_key_exists('scroll_id', $_POST);
-    if ($initialScroll) {
-      $url .= '&scroll';
-    }
-    else {
-      $url .= '&scroll_id=' . $_POST['scroll_id'];
-    }
-    self::curlPost($url, $query, $params);
-  }
-
-  /**
-   * Proxy method that receives a list of IDs to perform updates on in Elastic.
-   *
-   * Used by the verification system when in checklist mode to allow setting a
-   * comment and status on multiple records in one go.
-   */
-  public static function ajax_esproxy_updateids($website_id, $password, $nid) {
-    $params = hostsite_get_node_field_value($nid, 'params');
-    $url = $_POST['warehouse_url'] . 'index.php/services/rest/' . $params['endpoint'] . "/_update_by_query";
-    $scripts = [];
-    if (!empty($_POST['doc']['identification']['verification_status'])) {
-      $scripts[] = "ctx._source.identification.verification_status = '" . $_POST['doc']['identification']['verification_status'] . "'";
-    }
-    if (!empty($_POST['doc']['identification']['verification_substatus'])) {
-      $scripts[] = "ctx._source.identification.verification_substatus = '" . $_POST['doc']['identification']['verification_substatus'] . "'";
-    }
-    if (!empty($_POST['doc']['identification']['query'])) {
-      $scripts[] = "ctx._source.identification.query = '" . $_POST['doc']['identification']['query'] . "'";
-    }
-    $_ids = [];
-    // Convert Indicia IDs to the document _ids for ES.
-    foreach ($_POST['ids'] as $id) {
-      $_ids[] = $params['warehouse_prefix'] . $id;
-    }
-    $doc = [
-      'script' => [
-        'source' => implode("; ", $scripts),
-        'lang' => 'painless',
-      ],
-      'query' => [
-        'terms' => [
-          '_id' => $_ids,
-        ],
-      ],
-    ];
-    self::curlPost($url, $doc, $params);
-  }
-
-  /**
-   * Confirm that a permissions filter in the request is allowed for the user.
-   *
-   * For example, permissions may be different for accessing my vs all records
-   * so this method checks against the Drupal permissions defined on the edit
-   * tab, ensuring calls to the proxy can't be easily hacked.
-   *
-   * @param array $params
-   *   Form parameters from the Edit tab which include permission settings.
-   */
-  private static function checkPermissionsFilter(array $params) {
-    $permissionsFilter = empty($_POST['permissions_filter']) ? 'all' : $_POST['permissions_filter'];
-    $validPermissionsFilter = [
-      'all',
-      'my',
-      'location_collation',
-    ];
-    if (!in_array($permissionsFilter, $validPermissionsFilter)
-        || !hostsite_user_has_permission($params[$permissionsFilter . '_records_permission'])) {
-      throw new Exception('Unauthorised');
-    }
-  }
-
-  /**
-   * A simple wrapper for the cUrl functionality to POST to Elastic.
-   */
-  private static function curlPost($url, $data, $params) {
-    $session = curl_init($url);
-    curl_setopt($session, CURLOPT_POST, 1);
-    curl_setopt($session, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($session, CURLOPT_HTTPHEADER, [
-      'Content-Type: application/json',
-      "Authorization: USER:$params[user]:SECRET:$params[secret]",
-    ]);
-    curl_setopt($session, CURLOPT_REFERER, $_SERVER['HTTP_HOST']);
-    curl_setopt($session, CURLOPT_SSL_VERIFYPEER, FALSE);
-    curl_setopt($session, CURLOPT_HEADER, FALSE);
-    curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
-    // Do the POST and then close the session.
-    $response = curl_exec($session);
-    $headers = curl_getinfo($session);
-    curl_close($session);
-    if (array_key_exists('charset', $headers)) {
-      $headers['content_type'] .= '; ' . $headers['charset'];
-    }
-    header('Content-type: ' . $headers['content_type']);
-    echo $response;
   }
 
   protected static function getHeader($args) {

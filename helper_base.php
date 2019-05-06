@@ -669,6 +669,8 @@ JS;
   }
 
   /**
+   * Adds a resource to the page (e.g. a set of CSS and/or JS files).
+   *
    * Method to link up the external css or js files associated with a set of code.
    * This is normally called internally by the control methods to ensure the required
    * files are linked into the page so does not need to be called directly. However
@@ -931,6 +933,22 @@ JS;
             'https://cdnjs.cloudflare.com/ajax/libs/wicket/1.3.3/wicket.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/wicket/1.3.3/wicket-leaflet.min.js',
             self::$js_path . 'leaflet.heat/dist/leaflet-heat.js',
+          ],
+        ],
+        'datacomponents' => [
+          'deps' => [
+            'font_awesome',
+            'indiciaFootableReport',
+          ],
+          'javascript' => [
+            self::$js_path . 'indicia.datacomponents/idc.core.js',
+            self::$js_path . 'indicia.datacomponents/idc.esDataSource.js',
+            self::$js_path . 'indicia.datacomponents/jquery.idc.dataGrid.js',
+            self::$js_path . 'indicia.datacomponents/jquery.idc.esDownload.js',
+            self::$js_path . 'indicia.datacomponents/jquery.idc.leafletMap.js',
+            self::$js_path . 'indicia.datacomponents/jquery.idc.recordDetailsPane.js',
+            self::$js_path . 'indicia.datacomponents/jquery.idc.templatedOutput.js',
+            self::$js_path . 'indicia.datacomponents/jquery.idc.verificationButtons.js',
           ],
         ],
       );
@@ -1853,7 +1871,7 @@ indiciaData.jQuery = jQuery; //saving the current version of jQuery
       }
       if (!empty($javascript) || !empty($late_javascript)) {
         if (!self::$is_ajax) {
-          $script .= "$(document).ready(function() {\n";
+          $script .= "\n$(document).ready(function() {\n";
         }
         $script .= <<<JS
 indiciaData.documentReady = 'started';
@@ -2323,20 +2341,21 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
   /**
    * Takes a template string (e.g. <div id="{id}">) and replaces the tokens with the equivalent values looked up from
    * the $options array. Tokens suffixed |escape have HTML escaping applied, e.g. <div id="{id}">{value|escape}</div>
-   * @param string $template The templatable string.
-   * @param string $options The array of items which can be merged into the template.
+   * @param string $template
+   *   The templatable string.
+   * @param array $options
+   *   The array of items which can be merged into the template.
    */
   protected static function apply_replacements_to_template($template, $options) {
     // Build an array of all the possible tags we could replace in the template.
     $replaceTags=array();
     $replaceValues=array();
     foreach (array_keys($options) as $option) {
-      if (!is_array($options[$option]) && !is_object($options[$option])) {
-        array_push($replaceTags, '{'.$option.'}');
-        array_push($replaceValues, $options[$option]);
-        array_push($replaceTags, '{'.$option.'|escape}');
-        array_push($replaceValues, htmlspecialchars($options[$option]));
-      }
+      $value = is_array($options[$option]) || is_object($options[$option]) ? '' : $options[$option];
+      array_push($replaceTags, '{'.$option.'}');
+      array_push($replaceValues, $value);
+      array_push($replaceTags, '{'.$option.'|escape}');
+      array_push($replaceValues, htmlspecialchars($value));
     }
     return str_replace($replaceTags, $replaceValues, $template);
   }
