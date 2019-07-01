@@ -207,8 +207,9 @@ if ($("#{escapedId} option").length===0) {
 <div id="review-map-container"></div>
 <div{contentClass}{contentId}></div>
 </div>',
-  'dataValueList' => '<div class="detail-panel" id="{id}"><h3>{title}</h3><div class="record-details-fields ui-helper-clearfix">{content}</div></div>',
-  'dataValue' => '<div class="field ui-helper-clearfix"><span>{caption}:</span><span>{value}</span></div>',
+  // Rows in a list of key-value pairs.
+  'dataValueList' => '<div class="detail-panel" id="{id}"><h3>{title}</h3><dl class="dl-horizontal">{content}</dl></div>',
+  'dataValue' => '<dt>{caption}</dt><dd{class}>{value}</dd>',
   'speciesDetailsThumbnail' => '<div class="gallery-item"><a class="fancybox" href="{imageFolder}{the_text}"><img src="{imageFolder}{imageSize}-{the_text}" title="{caption}" alt="{caption}"/><br/>{caption}</a></div>',
 );
 
@@ -2684,7 +2685,6 @@ $.validator.messages.integer = $.validator.format(\"".lang::get('validation_inte
    */
   private static function getCachedResponse($file, $timeout, $options, $random=true) {
     // Note the random element, we only timeout a cached file sometimes.
-    $timeout = 1;
     $wantToCache = $timeout !== false;
     $haveFile = $file && is_file($file);
     $fresh = $haveFile && filemtime($file) >= (time() - $timeout);

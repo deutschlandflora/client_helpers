@@ -148,10 +148,11 @@ class iform_ukbms_assign_transects {
     global $user;
 
     $userID = $user->uid;
-    
+
     iform_load_helpers(array('map_helper'));
     data_entry_helper::add_resource('jquery_form');
     $auth = data_entry_helper::get_read_write_auth($args['website_id'], $args['password']);
+    $auth['write_tokens']['persist_auth'] = true;
 
     $typeTerms = array();
     if(!empty($args['main_type_term_1'])) $typeTerms[] = $args['main_type_term_1'];
@@ -162,7 +163,7 @@ class iform_ukbms_assign_transects {
     foreach($typeTermIDs as $termDetails){
         $lookUpValues[$termDetails['id']] = $termDetails['term'];
     }
-    
+
     $preLoad=array();
     $headers = array();
     $headers[] = 'MIME-Version: 1.0';
@@ -188,11 +189,10 @@ class iform_ukbms_assign_transects {
                                 'location_attribute_value:int_value' => $matches[3]
                             ), 'location_attribute_value');
                         $response = data_entry_helper::forward_post_to('save', $Model, $auth['write_tokens']);
-                        
-                        if (array_key_exists('email', $args) && $args['email'] !== '') {
-                            $personName = $user->name;
-                            $subject = 'Holiday square allocation : {person_name} : {location_name}';
-                            $message = '{person_name} has allocated themselves site {location_name} as a Holiday square.';
+
+                        if (array_key_exists('email', $args) && !empty($args['email'])) {
+                            $subject = 'Holiday square allocation : {first_name} {last_name} : {location_name}';
+                            $message = '{first_name} {last_name} {email} has allocated themselves site {location_name} as a Holiday square.';
                             $emailTo = $args['email'];
                             $locationRecords = data_entry_helper::get_population_data(array(
                                 'table' => 'location',
@@ -200,13 +200,19 @@ class iform_ukbms_assign_transects {
                                 'nocache' => true,
                             ));
                             $locationName = $locationRecords[0]['name'];
-                            // Replacements for the person's name and the location name tags in the subject and 
+                            // Replacements for the person's name and the location name tags in the subject and
                             // message with the real location and person name.
-                            $subject = str_replace(array("{person_name}", "{location_name}"),
-                                array($personName, $locationName),
-                                $subject); 
-                            $message = str_replace(array("{person_name}", "{location_name}"),
-                                array($personName, $locationName),
+                            $subject = str_replace(array("{first_name}", "{last_name}", "{email}", "{location_name}"),
+                                array(hostsite_get_user_field('first_name'),
+                                    hostsite_get_user_field('last_name'),
+                                    hostsite_get_user_field('mail'),
+                                    $locationName),
+                                $subject);
+                            $message = str_replace(array("{first_name}", "{last_name}", "{email}", "{location_name}"),
+                                array(hostsite_get_user_field('first_name'),
+                                    hostsite_get_user_field('last_name'),
+                                    hostsite_get_user_field('mail'),
+                                    $locationName),
                                 $message);
                             $sent = mail($emailTo, $subject, wordwrap($message, 70), $headers);
                             if ($sent) {
@@ -237,10 +243,9 @@ class iform_ukbms_assign_transects {
                             ), 'location_attribute_value');
                             $response = data_entry_helper::forward_post_to('save', $Model, $auth['write_tokens']);
                         }
-                        if (array_key_exists('email', $args) && $args['email'] !== '') {
-                            $personName = $user->name;
-                            $subject = 'Holiday square revoked : {person_name} : {location_name}';
-                            $message = '{person_name} has un-allocated themselves site {location_name} as a Holiday square.';
+                        if (array_key_exists('email', $args) && !empty($args['email'])) {
+                            $subject = 'Holiday square revoked : {first_name} {last_name} : {location_name}';
+                            $message = '{first_name} {last_name} {email} has un-allocated themselves site {location_name} as a Holiday square.';
                             $emailTo = $args['email'];
                             $locationRecords = data_entry_helper::get_population_data(array(
                                 'table' => 'location',
@@ -248,13 +253,19 @@ class iform_ukbms_assign_transects {
                                 'nocache' => true,
                             ));
                             $locationName = $locationRecords[0]['name'];
-                            // Replacements for the person's name and the location name tags in the subject and 
+                            // Replacements for the person's name and the location name tags in the subject and
                             // message with the real location and person name.
-                            $subject = str_replace(array("{person_name}", "{location_name}"),
-                                array($personName, $locationName),
+                            $subject = str_replace(array("{first_name}", "{last_name}", "{email}", "{location_name}"),
+                                array(hostsite_get_user_field('first_name'),
+                                    hostsite_get_user_field('last_name'),
+                                    hostsite_get_user_field('mail'),
+                                    $locationName),
                                 $subject);
-                            $message = str_replace(array("{person_name}", "{location_name}"),
-                                array($personName, $locationName),
+                            $message = str_replace(array("{first_name}", "{last_name}", "{email}", "{location_name}"),
+                                array(hostsite_get_user_field('first_name'),
+                                    hostsite_get_user_field('last_name'),
+                                    hostsite_get_user_field('mail'),
+                                    $locationName),
                                 $message);
                             $sent = mail($emailTo, $subject, wordwrap($message, 70), $headers);
                             if ($sent) {
@@ -268,22 +279,49 @@ class iform_ukbms_assign_transects {
             }
         }
     }
-    
+
     // Set up the form
     data_entry_helper::enable_validation('input-form');
     $r = '<div id="site-details" class="ui-helper-clearfix">' . PHP_EOL;
     $r .= '<form  method="post">' . PHP_EOL;
     $r .= $auth['write'] . PHP_EOL;
     $r .= '<input type="hidden" name="website_id" value="'.$args['website_id'].'"/>' . PHP_EOL;
+
+    $help = t('The aim of the holiday squares webpage is to improve coverage of WCBS squares in the uplands of ' .
+        'northern and western Britain. Few recorders live in these areas, but they are very popular holiday ' .
+        'destinations. Squares are currently available in Cumbria, Lancashire, North East England, Scotland, ' .
+        'Wales and Yorkshire.') . '<br/><br/>';
+
+    $help2 = '<ol>' .
+      '<li>' . t('Use the &quot;Find place&quot; control above the map to find a town or village near the area you ' .
+          'are interested in, then tailor your search area by dragging and/or zooming the map.') . '</li>' .
+      '<li>' . t('Press the &quotList closest sites&quot button (beneath the map) to list the @limit squares closest to the ' .
+          'centre of the map - these will be displayed in a grid below the map in a table in ascending distance order.' ,
+          array('@limit' => $args['limit'])) . ' ' .
+      t('If there are no squares in the area you have selected, the map will be automatically panned and/or zoomed to ' .
+          'show the nearest square.') . '</li>' ;
+      if($userID > 0) {
+        $help2 .= '<li>' .t('The table will display an individual control per site, indicating what action you may request ' .
+               'for each of square. Use the checkboxes to pick what you wish to happen.') . '</li>' .
+               '<li>' . t('When you have selected what action(s) you wish to carry out, click on the &quot;Carry out checked actions&quot; button.'). '</li></ol>' ;
+
+        $help2 .= t('Squares that are already allocated to you will be shown in red; unallocated in blue.') . '<br/>';
+      } else {
+          $help2 .= '<li>' .t('In order to request a square to be assigned to you, you must be registered and logged in.') . '</li></ol>';
+      }
+      $help2 .= t('Please note: if you change the view (e.g. search on different location), you will need to use the ' .
+              '&quotList closest site&quot button again to refresh the grid for the new map view.') ;
+    if($userID > 0) {
+      if($args['email'] !== null && !empty($args['email'])) {
+        $help2 .= '<br/><br/>' . t('Note that an email will be sent to @email to provide management visibility of the Holiday square allocation.', array('@email' => $args['email']));
+      }
+    }
+
+    //.TODO : check de-assignment for normal users, as well as admin.
+
     if(count($lookUpValues)>2) { // includes the "please select" empty option
-        $help = t('Pick the site type you are interested in, then use the &quot;find place&quot; box to find a nearby town or village. Zoom and/or drag the map to pan to show the search area you are interested in. ' .
-                  'Press the &quot;Search for Sites&quot; button to display the squares within the displayed area.') . '<br/>' .
-                  t('The closest @limit squares will be displayed in a grid under the map, complete with a control indicating what actions may be requested.', array('@limit' => $args['limit']));
-        if($userID > 0)
-            $help .= '<br/>' . t('When you have selected what action you wish to carry out, click on the &quot;Carry out checked actions&quot; button.');
-        if($userID > 0 && $args['email'] !== null && $args['email'] !== '') {
-            $help .= '<br/>' . t('Note that an email will be sent to @email to provide management visibility of the Holiday square allocation.', array('@email' => $args['email']));
-        }
+        $help .= t('First pick the site type you are interested in.') . '<br/>' . $help2;
+
 //        $help .= '<br/>' . t('Key').':<ul>' .
 //            '<li>'.t('Green : normal squares already allocated to you').'</li>'.
 //            '<li>'.t('Yellow : normal squares, allocated to other people').'</li>'.
@@ -294,7 +332,7 @@ class iform_ukbms_assign_transects {
         $value = '';
         if ($_POST && array_key_exists('location:location_type_id', $_POST))
             $value = $_POST['location:location_type_id'];
-            
+
         $r .= data_entry_helper::select(array(
             'label' => lang::get('Site Type'),
             'id' => 'location_type_id',
@@ -304,16 +342,10 @@ class iform_ukbms_assign_transects {
             'default' => $value
         ));
     } else {
-        $help = t('Use the &quot;find place&quot; box to find a nearby town or village, then zoom and/or drag the map to pan to show the search area you are interested in. ' .
-            'Press the &quot;Search for Sites&quot; button to display the squares within the displayed area.') . '<br/>' .
-            t('The closest @limit squares will be displayed in a grid under the map, complete with a control indicating what action may be requested.', array('@limit' => $args['limit']));
-        if($userID > 0)
-            $help .= '<br/>' . t('When you have selected what action you wish to carry out, click on the &quot;Carry out checked actions&quot; button.');
-        $help .= '<br/>' . t('Currently this form is configured to handle @type sites only.', array('@type' => $typeTermIDs[0]['term']));
-        if($userID > 0 && $args['email'] !== null && $args['email'] !== '') {
-            $help .= '<br/>' . ' ' . t('Note that an email will be sent to @email to provide management visibility of the Holiday square allocation.', array('@email' => $args['email']));
-        }
-//        $help .= '<br/>' . t('Key').':<ul>' .
+
+        $help .= $help2 .
+          '<br/><br/>' . t('Currently this form is configured to handle @type sites only.', array('@type' => $typeTermIDs[0]['term']));
+        //        $help .= '<br/>' . t('Key').':<ul>' .
 //            '<li>'.t('Green : normal squares already allocated to you').'</li>'.
 //            '<li>'.t('Yellow : normal squares, allocated to other people').'</li>'.
 //            '<li>'.t('Red : unallocated normal squares').'</li>'.
@@ -329,12 +361,14 @@ class iform_ukbms_assign_transects {
     $options = iform_map_get_map_options($args, $auth['read']);
     $olOptions = iform_map_get_ol_options($args);
     $options['clickForSpatialRef']=false;
+    $options['scroll_wheel_zoom'] = false;
     $r .= map_helper::map_panel($options, $olOptions);
-    $r .= '<button type="button" class="indicia-button" onclick="indiciaFns.displayFeatures([])">' . t('Search for Sites') . '</button>';
-    $r .= '<table id="featureTable"><thead><tr><th>'.t('Site').
-//            '</th><th>'.t('Holiday square?').
-            '</th><th>'.t('Status').
-            '</th><th>'.t('Actions').
+    $r .= '<input type="button" class="indicia-button allocation-search-button" onclick="indiciaFns.listClosestSites([])" value="' . t('List closest sites') . '">';
+    $r .= '<table id="featureTable" class="ui-widget ui-widget-content" style="display:none;"><thead class="ui-widget-header"><tr><th class="ui-widget-header">'.t('Site').
+    //            '</th><th class="ui-widget-header">'.t('Holiday square?').
+            '</th><th class="ui-widget-header">'.t('Distance').
+            '</th><th class="ui-widget-header">'.t('Status').
+            '</th><th class="ui-widget-header">'.t('Actions').
             '</th></thead><tbody id="featureTableBody"></tbody></table>'.
           '</form>';
     $r .= '</div>'; // site-details
@@ -347,9 +381,8 @@ class iform_ukbms_assign_transects {
                                       'indiciaData.holiday_attr_id = ' . $args['holiday_attr_id'] . ';' . PHP_EOL .
                                       'indiciaData.indiciaSvc = "' . data_entry_helper::$base_url . '";' . PHP_EOL .
                                       'indiciaData.siteDetails = "' . hostsite_get_url('/site-details') . '";' . PHP_EOL .
-                                      'indiciaData.initFeatureIds = [' . implode(', ', $preLoad) . '];' . PHP_EOL .
-                                      'indiciaData.user_id = ' . (($user_id = hostsite_get_user_field('indicia_user_id')) ? $user_id : 0) . ';' . PHP_EOL ;
-    
+                                      'indiciaData.initFeatureIds = [' . implode(', ', $preLoad) . '];' . PHP_EOL;
+
     return $r;
   }
 
