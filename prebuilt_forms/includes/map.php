@@ -109,6 +109,7 @@ function iform_map_get_map_parameters() {
         'bing_shaded' => 'Bing Shaded',
         'bing_os' => 'Bing Ordnance Survey',
         'dynamicOSGoogleSat' => 'Dynamic (OpenStreetMap > Ordnance Survey Leisure > Google Satellite)',
+        'dynamicOSMGoogleSat' => 'Dynamic (OpenStreetMap > Google Satellite)',
         'osm' => 'OpenStreetMap',
         'otm' => 'OpenTopoMap',
         'os_leisure' => 'OS Leisure',
@@ -390,7 +391,7 @@ indiciaFns.zoomToBounds = function(mapdiv, bounds) {
   // loading an initial feature (e.g. viewing an edited record)
   if (
       (typeof mapdiv.settings.zoomMapToOutput==="undefined" || mapdiv.settings.zoomMapToOutput===false) &&
-      (typeof $.cookie === 'undefined' || $.cookie('maplon')===null || mapdiv.settings.rememberPos===false) &&
+      (typeof $.cookie === 'undefined' || $.cookie('maplongitude')===null || mapdiv.settings.rememberPos===false) &&
       !mapdiv.settings.initialFeatureWkt
       ) {
     if (mapdiv.map.getZoomForExtent(bounds) > mapdiv.settings.maxZoom) {

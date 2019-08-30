@@ -1977,9 +1977,9 @@ HTML;
               $defStyleFns['fillOpacity'] = "getfillopacity: function(feature) {
                 return Math.max(0, feature.attributes.$col - feature.layer.map.zoom/100);
               }";
-              // When selected, a little bit more opaque.
+              // When selected, don't increase transparency as zoomed in.
               $selStyleFns['fillOpacity'] = "getfillopacity: function(feature) {
-                return Math.max(0, feature.attributes.$col - feature.layer.map.zoom/100 + 0.3);
+                return feature.attributes.$col;
               }";
             }
             elseif ($def['feature_style'] === 'graphicZIndex') {
@@ -2959,16 +2959,8 @@ function rebuild_page_url(oldURL, overrideparam, overridevalue, removeparam) {
     $header_date=clone $consider_date;
     $r .= "<tr>".($options['includeWeekNumber'] ? "<td></td>" : "")."<td></td>";
 
-    global $language;
-    $lang = explode('-', $language->language);
-    switch ($lang[0]) {
-    	case 'en' : $lang =  'eng';
-    				break;
-    	case 'de' : $lang =  'deu';
-    				break;
-    	case 'fr' : $lang =  'fra';
-    				break;
-    }
+    require_once('prebuilt_forms/includes/language_utils.php');
+    $lang = iform_lang_iso_639_2(hostsite_get_user_field('language'));
     setlocale (LC_TIME, $lang);
 
     for($i=0; $i<7; $i++){

@@ -42,6 +42,178 @@ class iform_dynamic_elasticsearch extends iform_dynamic {
    */
   private static $controlIds = [];
 
+  const MAPPING_FIELDS = [
+    '@timestamp' => [
+      'caption' => 'Indexing timestamp',
+      'description' => 'Timestamp when the record was indexed into to the reporting system.',
+    ],
+    'id' => [
+      'caption' => 'ID',
+      'description' => 'Unique record ID.',
+    ],
+    'event.event_id' => [
+      'caption' => 'Sample ID',
+      'description' => 'Unique sample ID.',
+    ],
+    '#datasource_code#' => [
+      'caption' => 'Datasource codes',
+      'description' => 'Website and survey dataset the record is sourced from, in abbreviated encoded form.',
+    ],
+    '#status_icons#' => [
+      'caption' => 'Record status icons',
+      'description' => "Icons showing the record's verification status and sensitivity information.",
+    ],
+    '#data_cleaner_icons#' => [
+      'caption' => 'Automated checks',
+      'description' => "Icons showing the results of automated checks on the record.",
+    ],
+    '#event_date#' => [
+      'caption' => 'Date',
+      'description' => 'Date of the record',
+    ],
+    'event.day_of_year' => [
+      'caption' => 'Day of year',
+      'description' => 'Numeric day within the year of the record (1-366)',
+    ],
+    'event.month' => [
+      'caption' => 'Month',
+      'description' => 'Numeric month of the record',
+    ],
+    'event.year' => [
+      'caption' => 'Year',
+      'description' => 'Year of the record',
+    ],
+    'event.event_remarks' => [
+      'caption' => 'Sample comment',
+      'description' => 'Comment given for the sample by the recorder.',
+    ],
+    'event.habitat' => [
+      'caption' => 'Habitat',
+      'description' => 'Habitat recorded for the sample.',
+    ],
+    'event.recorded_by' => [
+      'caption' => 'Recorder name(s)',
+      'description' => 'Name of the people involved in the field record.',
+    ],
+    'event.sampling_protocol' => [
+      'caption' => 'Sample method',
+      'description' => 'Method for the sample if provided.',
+    ],
+    'identification.identified_by' => [
+      'caption' => 'Identified by',
+      'description' => 'Identifier (determiner) of the record.',
+    ],
+    'identification.recorder_certainty' => [
+      'caption' => 'Recorder certainty',
+      'description' => 'Certainty that the identification is correct as attributed by the recorder.',
+    ],
+    'identification.verification_decision_source' => [
+      'caption' => 'Verification decision source',
+      'description' => 'Either M for machine based verification or H for human verification decisions.',
+    ],
+    'taxon.name' => [
+      'caption' => 'Taxon name',
+      'description' => 'Name as recorded for the taxon.',
+    ],
+    'taxon.accepted_name' => [
+      'caption' => 'Accepted name',
+      'description' => 'Currently accepted name for the recorded taxon.',
+    ],
+    'taxon.vernacular_name' => [
+      'caption' => 'Common name',
+      'description' => 'Common name for the recorded taxon.',
+    ],
+    'taxon.group' => [
+      'caption' => 'Taxon group',
+      'description' => 'Taxon reporting group associated with the current identification of this record.',
+    ],
+    'taxon.kingdom' => [
+      'caption' => 'Kingdom',
+      'description' => 'Taxonomic kingdom associated with the current identification of this record.',
+    ],
+    'taxon.phylum' => [
+      'caption' => 'Phylum',
+      'description' => 'Taxonomic phylum associated with the current identification of this record.',
+    ],
+    'taxon.class' => [
+      'caption' => 'Class',
+      'description' => 'Taxonomic class associated with the current identification of this record.',
+    ],
+    'taxon.order' => [
+      'caption' => 'Order',
+      'description' => 'Taxonomic order associated with the current identification of this record.',
+    ],
+    'taxon.family' => [
+      'caption' => 'Family',
+      'description' => 'Taxonomic family associated with the current identification of this record.',
+    ],
+    'taxon.subfamily' => [
+      'caption' => 'Subfamily',
+      'description' => 'Taxonomic subfamily associated with the current identification of this record.',
+    ],
+    'taxon.taxon_rank' => [
+      'caption' => 'Taxon rank',
+      'description' => 'Taxonomic rank associated with the current identification of this record.',
+    ],
+    'taxon.genus' => [
+      'caption' => 'Genus',
+      'description' => 'Taxonomic genus associated with the current identification of this record.',
+    ],
+    'location.verbatim_locality' => [
+      'caption' => 'Location name',
+      'description' => 'Location name associated with the record.',
+    ],
+    'location.name' => [
+      'caption' => 'Location',
+      'description' => 'Location associated with the record where the record was linked to a defined location.',
+    ],
+    'location.location_id' => [
+      'caption' => 'Location ID',
+      'description' => 'Unique ID of the location associated with the record where the record was linked to a defined location.',
+    ],
+    'location.parent_name' => [
+      'caption' => 'Parent location',
+      'description' => 'Parent location associated with the record where the record was linked to a defined location which has a hierarchical parent.',
+    ],
+    'location.parent_location_id' => [
+      'caption' => 'Parent location ID',
+      'description' => 'Unique ID of the parent location associated with the record where the record was linked to a defined location which has a hierarchical parent.',
+    ],
+    'location.output_sref' => [
+      'caption' => 'Display spatial reference',
+      'description' => 'Spatial reference in the recommended local grid system.',
+    ],
+    'location.coordinate_uncertainty_in_meters' => [
+      'caption' => 'Coordinate uncertainty in metres',
+      'description' => 'Uncertainty of a provided GPS point.',
+    ],
+    '#lat_lon#' => [
+      'caption' => 'Lat/lon',
+      'description' => 'Latitude and longitude of the record.',
+    ],
+    'occurrence.media' => [
+      'caption' => 'Media',
+      'description' => 'Thumbnails for any occurrence photos and other media.',
+      'handler' => 'media',
+    ],
+    'occurrence.sex' => [
+      'caption' => 'Sex',
+      'description' => 'Sex of the recorded organism',
+    ],
+    'occurrence.life_stage' => [
+      'caption' => 'Life stage',
+      'description' => 'Life stage of the recorded organism.',
+    ],
+    'occurrence.individual_count' => [
+      'caption' => 'Count',
+      'description' => 'Numeric abundance count of the recorded organism.',
+    ],
+    'occurrence.organism_quantity' => [
+      'caption' => 'Quantity',
+      'description' => 'Abundance of the recorded organism (numeric or text).',
+    ],
+  ];
+
   /**
    * Return the page metadata.
    *
@@ -228,6 +400,38 @@ JS;
   }
 
   /**
+   * Applies token replacements to one or more values in the $options array.
+   *
+   * Tokens are of the format "{{ name }}" where the token name is one of the
+   * following:
+   * * indicia_user_id - the user's warehouse user ID.
+   * * a parameter from the URL query string.
+   *
+   * @param array $options
+   *   Control options.
+   * @param array $fields
+   *   List of the fields in the options array that replacements should be
+   *   applied to.
+   * @param array $jsonFields
+   *   Subset of $fields where the value should be a JSON object after
+   *   replacements are applied.
+   */
+  private static function applyReplacements(array &$options, array $fields, array $jsonFields) {
+    $replacements = ['{{ indicia_user_id }}' => hostsite_get_user_field('indicia_user_id')];
+    foreach ($_GET as $field => $value) {
+      $replacements["{{ $field }}"] = $value;
+    }
+    foreach ($fields as $field) {
+      if (!empty($options[$field]) && is_string($options[$field])) {
+        $options[$field] = str_replace(array_keys($replacements), array_values($replacements), $options[$field]);
+        if (in_array($field, $jsonFields)) {
+          $options[$field] = json_decode($options[$field]);
+        }
+      }
+    }
+  }
+
+  /**
    * Provide common option handling for controls.
    *
    * * If attachToId specified, ensures that the control ID is set to the same
@@ -294,8 +498,9 @@ JS;
    *   Empty string as no HTML required.
    */
   protected static function get_control_source($auth, $args, $tabalias, $options) {
+    self::applyReplacements($options, ['aggregation'], ['aggregation']);
     self::checkOptions(
-      'esSource',
+      'source',
       $options,
       ['id'],
       ['aggregation', 'filterBoolClauses', 'buildTableXY', 'sort']
@@ -315,6 +520,7 @@ JS;
       'initialMapBounds',
       'filterBoolClauses',
       'filterSourceGrid',
+      'filterSourceField',
       'filterField',
       'filterBoundsUsingMap',
     ]);
@@ -335,6 +541,7 @@ JS;
     $options = array_merge([
       'id' => "es-user-filter-" . self::$controlIndex,
       'definesPermissions' => FALSE,
+      'sharingCode' => 'R',
     ], $options);
     $filterData = report_filters_load_existing($auth['read'], $options['sharingCode'], TRUE);
     $optionArr = [];
@@ -418,7 +625,10 @@ HTML;
    * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[download]
    */
   protected static function get_control_download($auth, $args, $tabalias, $options) {
-    self::checkOptions('esDownload', $options, ['source'], []);
+    self::checkOptions('esDownload', $options,
+      ['source'],
+      ['addColumns', 'removeColumns']
+    );
     global $indicia_templates;
     $r = str_replace(
       [
@@ -465,7 +675,12 @@ HTML;
       $indicia_templates['two-col-50']);
     // This does nothing at the moment - just a placeholder for if and when we
     // add some download options.
-    $dataOptions = self::getOptionsForJs($options, ['source'], empty($options['attachToId']));
+    $dataOptions = self::getOptionsForJs($options, [
+      'source',
+      'columnsTemplate',
+      'addColumns',
+      'removeColumns',
+    ], empty($options['attachToId']));
     helper_base::$javascript .= <<<JS
 $('#$options[id]').idcEsDownload({});
 
@@ -483,14 +698,42 @@ JS;
       'dataGrid',
       $options,
       ['source'],
-      ['actions', 'columns']
+      ['actions', 'columns', 'responsiveOptions', 'availableColumns', 'applyFilterRowToSources']
     );
-    if (empty($options['columns']) && empty($options['autogenColumns'])) {
-      throw new Exception("Control [dataGrid] requires a parameter called @columns or must have @autogenColumns=true");
+    if (empty($options['columns'])) {
+      throw new Exception('Control [dataGrid] requires a parameter called @columns.');
     }
+    if (!empty($options['scrollY']) && !preg_match('/^\d+px$/', $options['scrollY'])) {
+      throw new Exception('Control [dataGrid] @scrollY parameter must be of CSS pixel format, e.g. 100px');
+    }
+    $options = array_merge([
+      'availableColumns' => !empty($options['aggregation']) ? [] : array_keys(self::MAPPING_FIELDS),
+    ], $options);
+    $columnsByField = [];
+    foreach ($options['columns'] as $columnDef) {
+      if (empty($columnDef['field'])) {
+        throw new Exception('Control [dataGrid] @columns option does not contain a field for every item.');
+      }
+      $field = $columnDef['field'];
+      unset($columnDef['field']);
+      $columnsByField[$field] = $columnDef;
+    }
+    $options['columns'] = array_keys($columnsByField);
+    foreach ($options['availableColumns'] as $field) {
+      if (array_key_exists($field, self::MAPPING_FIELDS)) {
+        if (!isset($columnsByField[$field])) {
+          $columnsByField[$field] = self::MAPPING_FIELDS[$field];
+        }
+        else {
+          $columnsByField[$field] = array_merge(self::MAPPING_FIELDS[$field], $columnsByField[$field]);
+        }
+      }
+    }
+    $options['availableColumnInfo'] = $columnsByField;
+    helper_base::add_resource('jquery_ui');
     helper_base::add_resource('indiciaFootableReport');
     // Add footableSort for aggregation tables.
-    if (!empty($options['simpleAggregation']) || !empty($options['sourceTable'])) {
+    if ((!empty($options['aggregation']) && $options['aggregation'] === 'simple') || !empty($options['sourceTable'])) {
       helper_base::add_resource('footableSort');
     }
     // Fancybox for image popups.
@@ -498,14 +741,19 @@ JS;
     $dataOptions = self::getOptionsForJs($options, [
       'source',
       'columns',
+      'availableColumnInfo',
       'actions',
+      'cookies',
       'includeColumnHeadings',
       'includeFilterRow',
       'includePager',
+      'responsive',
+      'responsiveOptions',
       'sortable',
-      'simpleAggregation',
+      'aggregation',
       'sourceTable',
-      'autogenColumns',
+      'scrollY',
+      'applyFilterRowToSources',
     ], empty($options['attachToId']));
     helper_base::$javascript .= <<<JS
 $('#$options[id]').idcDataGrid({});
@@ -531,14 +779,10 @@ JS;
    * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[leafletMap]
    */
   protected static function get_control_leafletMap($auth, $args, $tabalias, $options) {
-    self::checkOptions('leafletMap', $options, ['source'], ['styles']);
-    $options = array_merge([
-      'styles' => new stdClass(),
-    ], $options);
+    self::checkOptions('leafletMap', $options, ['layerConfig'], ['layerConfig']);
     helper_base::add_resource('leaflet');
     $dataOptions = self::getOptionsForJs($options, [
-      'source',
-      'styles',
+      'layerConfig',
       'showSelectedRow',
       'initialLat',
       'initialLng',
@@ -547,6 +791,9 @@ JS;
     ], empty($options['attachToId']));
     helper_base::$javascript .= <<<JS
 $('#$options[id]').idcLeafletMap({});
+
+JS;
+    helper_base::$late_javascript .= <<<JS
 $('#$options[id]').idcLeafletMap('bindGrids');
 
 JS;
@@ -592,20 +839,16 @@ JS;
    */
   private static function getControlContainer($controlName, array $options, $dataOptions, $content='') {
     if (!empty($options['attachToId'])) {
-      $source = json_encode($options['source']);
       // Use JS to attach to an existing element.
       helper_base::$javascript .= <<<JS
 $('#$options[attachToId]')
   .addClass('idc-output')
   .addClass("idc-output-$controlName")
-  .attr('data-idc-esSource', '$source')
   .attr('data-idc-output-config', '$dataOptions');
 
 JS;
       return '';
     }
-    // Escape the source so it can output as an attribute.
-    $source = str_replace('"', '&quot;', json_encode($options['source']));
     return <<<HTML
 <div id="$options[id]" class="idc-output idc-output-$controlName" data-idc-config="$dataOptions">
   $content
@@ -784,49 +1027,126 @@ HTML;
   /**
    * Retrieve parameters from the URL and add to the ES requests.
    *
-   * Currently only supports taxon scratchpad list filtering.
-   *
-   * Options can include:
-   * * @taxon_scratchpad_list_id - set to false to disable filtering species by
-   *   a provided scratchpad list ID.
+   * @link https://indicia-docs.readthedocs.io/en/latest/site-building/iform/prebuilt-forms/dynamic-elasticsearch.html#[urlParams]
    *
    * @return string
    *   Hidden input HTML which defines the appropriate filters.
    */
   protected static function get_control_urlParams($auth, $args, $tabalias, $options) {
+    self::checkOptions('urlParams', $options, [], ['fieldFilters']);
     $options = array_merge([
-      'taxon_scratchpad_list_id' => TRUE,
+      'fieldFilters' => [
+        'taxa_in_scratchpad_list_id' => [
+          [
+            'name' => 'taxon.higher_taxon_ids',
+            'type' => 'integer',
+            'process' => 'taxonIdsInScratchpad',
+          ],
+        ],
+        // For legacy configurations
+        'taxon_scratchpad_list_id' => [
+          [
+            'name' => 'taxon.higher_taxon_ids',
+            'type' => 'integer',
+            'process' => 'taxonIdsInScratchpad',
+          ],
+        ],
+        'sample_id' => [
+          [
+            'name' => 'event.event_id',
+            'type' => 'integer',
+          ],
+        ],
+        'taxa_in_sample_id' => [
+          [
+            // Use accepted taxon ID so this is not a hierarchical query.
+            'name' => 'taxon.accepted_taxon_id',
+            'type' => 'integer',
+            'process' => 'taxonIdsInSample',
+          ],
+        ],
+      ],
       // Other options, e.g. group_id or field params may be added in future.
     ], $options);
     $r = '';
-    if (!empty($options['taxon_scratchpad_list_id']) && !empty($_GET['taxon_scratchpad_list_id'])) {
-      // Check the parameter is valid.
-      $taxonScratchpadListId = $_GET['taxon_scratchpad_list_id'];
-      if (!preg_match('/^\d+$/', $taxonScratchpadListId)) {
-        hostsite_show_message(
-          lang::get('The taxon_scratchpad_list_id parameter should be a whole number which is the ID of a scratchpad list.'),
-          'warning'
-        );
-      }
-      // Load the scratchpad's list of taxa.
-      iform_load_helpers(['report_helper']);
-      $listEntries = report_helper::get_report_data([
-        'dataSource' => 'library/taxa/external_keys_for_scratchpad',
-        'readAuth' => $auth['read'],
-        'extraParams' => ['scratchpad_list_id' => $taxonScratchpadListId],
-      ]);
-      // Build a hidden input which causes filtering to this list.
-      $keys = [];
-      foreach ($listEntries as $row) {
-        $keys[] = $row['external_key'];
-      }
-      $keyJson = str_replace('"', '&quot;', json_encode($keys));
-      $r .= <<<HTML
-<input type="hidden" class="es-filter-param" value="$keyJson"
-  data-es-bool-clause="must" data-es-field="taxon.higher_taxon_ids" data-es-query-type="terms" />
+    foreach ($options['fieldFilters'] as $field => $esFieldList) {
+      if (!empty($_GET[$field])) {
+        foreach ($esFieldList as $esField) {
+          $value = trim($_GET[$field]);
+          if ($esField['type'] === 'integer') {
+            if (!preg_match('/^\d+$/', $value)) {
+              // Disable this filter.
+              $value = '-1';
+              hostsite_show_message(
+                "Data cannot be loaded because the value in the $field parameter is invalid",
+                'warning'
+              );
+            }
+          }
+          $queryType = 'term';
+          // Special processing for a taxon scratchpad ID.
+          if (isset($esField['process'])) {
+            if ($esField['process'] === 'taxonIdsInScratchpad') {
+              $value = self::convertValueToFilterList(
+                'library/taxa/external_keys_for_scratchpad',
+                ['scratchpad_list_id' => $value],
+                'external_key',
+                $auth
+              );
+            }
+            elseif ($esField['process'] === 'taxonIdsInSample') {
+              $value = self::convertValueToFilterList(
+                'library/taxa/external_keys_for_sample',
+                ['sample_id' => $value],
+                'external_key',
+                $auth
+              );
+            }
+            $queryType = 'terms';
+          }
+          $r .= <<<HTML
+<input type="hidden" class="es-filter-param" value="$value"
+  data-es-bool-clause="must" data-es-field="$esField[name]" data-es-query-type="$queryType" />
+
 HTML;
+        }
+      }
     }
     return $r;
+  }
+
+  /**
+   * Uses an Indicia report to convert a URL param to a list of filter values.
+   *
+   * For example, converts a scratchpad list ID to the list of taxa in the
+   * scratchpad list.
+   *
+   * @param string $report
+   *   Report path.
+   * @param array $params
+   *   List of parameters to pass to the report.
+   * @param string $outputField
+   *   Name of the field output by the report to build the list from.
+   * @param array $auth
+   *   Authorisation tokens.
+   *
+   * @return string
+   *   List for placing in the url param's hidden input attribute.
+   */
+  private static function convertValueToFilterList($report, array $params, $outputField, array $auth) {
+    // Load the scratchpad's list of taxa.
+    iform_load_helpers(['report_helper']);
+    $listEntries = report_helper::get_report_data([
+      'dataSource' => $report,
+      'readAuth' => $auth['read'],
+      'extraParams' => $params,
+    ]);
+    // Build a hidden input which causes filtering to this list.
+    $keys = [];
+    foreach ($listEntries as $row) {
+      $keys[] = $row[$outputField];
+    }
+    return str_replace('"', '&quot;', json_encode($keys));
   }
 
   /**
@@ -838,28 +1158,47 @@ HTML;
    *
    * Options are:
    *
-   * * @locationTypeId - ID of the location type of the locations to list. Must
-   *   be a type indexed by the spatial index builder module.
+   * * @locationTypeId - Either a single ID of the location type of the
+   *   locations to list, or an array of IDs of location types where the
+   *   locations are hierarchical (parent first). Each type ID must be indexed
+   *   by the spatial index builder module.
    *
    * @return string
    *   Control HTML
    */
   protected static function get_control_higherGeographySelect($auth, $args, $tabalias, $options) {
-    if (empty($options['locationTypeId']) || !preg_match('/^\d+$/', $options['locationTypeId'])) {
-      throw new Exception('An integer @locationTypeId parameter is required for the [higherGeographySelect] control');
+    if (empty($options['locationTypeId']) ||
+        (!is_array($options['locationTypeId']) && !preg_match('/^\d+$/', $options['locationTypeId']))) {
+      throw new Exception('An integer or integer array @locationTypeId parameter is required for the [higherGeographySelect] control');
     }
+    $typeIds = is_array($options['locationTypeId']) ? $options['locationTypeId'] : [$options['locationTypeId']];
+    $r = '';
     $options = array_merge([
+      'class' => 'es-higher-geography-select',
+      'blankText' => lang::get('<All locations shown>'),
       'id' => 'higher-geography-select',
     ], $options);
-    return data_entry_helper::location_select([
-      'id' => $options['id'],
-      'class' => 'es-higher-geography-select',
-      'extraParams' => $auth['read'] + [
-        'location_type_id' => $options['locationTypeId'],
-        'orderby' => 'name',
-      ],
-      'blankText' => lang::get('<All locations shown>'),
-    ]);
+    $options['extraParams'] = array_merge([
+      'orderby' => 'name',
+    ], $options['extraParams'], $auth['read']);
+    $baseId = $options['id'];
+    foreach ($typeIds as $idx => $typeId) {
+      $options['extraParams']['location_type_id'] = $typeId;
+      if (count($typeIds) > 0) {
+        $options['id'] = "$baseId-$idx";
+        $options['class'] .= ' linked-select';
+      }
+      if ($idx > 0) {
+        $options['parentControlId'] = "$baseId-" . ($idx - 1);
+        if ($idx === 1) {
+          $options['parentControlLabel'] = $options['label'];
+          $options['filterField'] = 'parent_id';
+          unset($options['label']);
+        }
+      }
+      $r .= data_entry_helper::location_select($options);
+    }
+    return $r;
   }
 
   /**
@@ -929,6 +1268,16 @@ HTML;
 
   protected static function getFirstTabAdditionalContent($args, $auth, &$attributes) {
     return '';
+  }
+
+  /**
+   * Disable save buttons for this form class. Not a data entry form.
+   *
+   * @return bool
+   *   Always return FALSE.
+   */
+  protected static function include_save_buttons() {
+    return FALSE;
   }
 
 }
