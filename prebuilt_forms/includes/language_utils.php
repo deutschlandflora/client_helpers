@@ -35,9 +35,11 @@
  * @todo Complete the list.
  */
 function iform_lang_iso_639_2($lang = NULL) {
-  // @todo Check the following for Drupal 8 compatibility
   if (!$lang) {
     $lang = hostsite_get_user_field('language');
+  }
+  if (strlen($lang) === 3) {
+    return $lang;
   }
   // If there is a sub-language, ignore it (e.g. en-GB becomes just en).
   // @todo may want to handle sub-languages
