@@ -32,6 +32,7 @@
 require_once 'includes/dynamic.php';
 require_once 'includes/report.php';
 require_once 'includes/groups.php';
+require_once 'includes/barcode.php';
 
 
 class iform_record_details_2 extends iform_dynamic {
@@ -313,6 +314,7 @@ Record ID',
     // Draw the Record Details, but only if they aren't requested as hidden by the administrator.
     $test = $args['operator'] === 'in';
     $availableFields = array(
+	 'sample_id'=>lang::get('Sample ID'),  //maps4net added
       'occurrence_id' => lang::get('Record ID'),
       'occurrence_external_key' => lang::get('Record external key'),
       'preferred_taxon' => lang::get('Recommended name'),
@@ -325,10 +327,13 @@ Record ID',
       'record_status' => lang::get('Record status'),
       'verifier' => lang::get('Verified by'),
       'date' => lang::get('Date'),
-      'entered_sref' => lang::get('Grid ref'),
+      //'entered_sref' => lang::get('Grid ref'),
+	  'grids_tk'=>lang::get('grids_tk'),  //maps4net added
       'sref_precision' => lang::get('Uncertainty (m)'),
       'occurrence_comment' => lang::get('Record comment'),
       'location_name' => lang::get('Site name'),
+	  'naturraum' => lang::get('Naturraum'),
+	  'landkreis' => lang::get('Landkreis'),
       'sample_comment' => lang::get('Sample comment'),
       'licence_code' => lang::get('Licence')
     );
@@ -363,7 +368,8 @@ Record ID',
     if (self::$record['taxon'] !== self::$record['preferred_taxon']) {
       $nameLabel .= ' (' . self::$record['preferred_taxon'] . ')';
     }
-    $title = lang::get('Record of {1}', $nameLabel);
+    $nameLabel = str_replace('- zero abundance found', '', $nameLabel);  //maps4net added
+	$title = lang::get('Record of {1}', $nameLabel);
     hostsite_set_page_title($title);
     foreach ($availableFields as $field => $caption) {
       if ($test === in_array(strtolower($caption), $fieldsLower) && !empty(self::$record[$field])) {
@@ -391,8 +397,10 @@ Record ID',
         );
       }
     }
-    $created = date('jS F Y \a\t H:i', strtotime(self::$record['created_on']));
-    $updated = date('jS F Y \a\t H:i', strtotime(self::$record['updated_on']));
+    //$created = date('jS F Y \a\t H:i', strtotime(self::$record['created_on']));
+    //$updated = date('jS F Y \a\t H:i', strtotime(self::$record['updated_on']));
+	$created = date('d.m.Y \u\m H:i \U\h\r', strtotime(self::$record['created_on']));  //maps4net changed date format
+    $updated = date('d.m.Y \u\m H:i \U\h\r', strtotime(self::$record['updated_on'])); //maps4net changed date format
     $dateInfo = lang::get('Entered on {1}', $created);
     if ($created !== $updated) {
       $dateInfo .= lang::get(' and last updated on {1}', $updated);
@@ -1147,5 +1155,54 @@ STRUCT;
   protected static function getFirstTabAdditionalContent($args, $auth, &$attributes) {
     return '';
   }
+  
+   /**
+  * Get Barcode, QRCode or else
+ **/
+ protected static function get_control_qrcode($args) {
+ self::load_record($auth, $args);
+ $record = self::$record;
+ $taxon = empty(self::$record['preferred_taxon']) ? self::$record['taxon'] : self::$record['preferred_taxon'];
+ $preferred_authority = self::$record['preferred_authority'];
+ $common_name = self::$record['common_name'];
+ $family_taxon = self::$record['family_taxon'];
+ $date = self::$record['date'];
+ $akzession = self::$record['akzession_id'];
+ $naturraum = self::$record['naturraum'];
+ $data = $taxon . '-' . $preferred_authority . '-' . $common_name . '-' . $family_taxon . '-'. $date . '-' . $akzession . '-' . $naturraum . '-' . $landkreis . '-' . $record[occurrence_id];
+ $format= 'png';
+ $symbology ='qr';
+ $options['sx'] = '2';
+ $options['sy'] = '2'; 
+
+$generator = new barcode_generator();
+
+/* Output directly to standard output. */
+$generator->output_image($format, $symbology, $data, $options);
+
+/* Create bitmap image. */
+$image = $generator->render_image($symbology, $data, $options);
+imagepng($image);
+imagedestroy($image);
+
+
+/* Generate SVG markup. */
+$svg = $generator->render_svg($symbology, $data, $options);
+echo $svg;
+  
+      return '<div class="detail-panel" id="detail-panel-barcode">' . 
+	  '<p><img src="/sites/default/files/wips_logo.svg" alt="Startseite"></p>' .
+	  '<p><h3><i>' . $taxon . '</i></h3></p>' . 
+	  '<p>' . $preferred_authority . '</p>' .
+	  '<p>' . $common_name . '</p>' . 
+	  '<p>' . $family_taxon . '</p>' . 
+	  '<p>' . $date . '</p>' .
+	  '<p>' . $akzession . '</p>' . // occAttr:88 
+	  '<p>' . $svg . ' </p>' . //This is the QRCode markup
+	 //'<p>' . $record[occurrence_id] . '</p>' .
+	  '</div>';
+  }
+  
+  
 
 }
