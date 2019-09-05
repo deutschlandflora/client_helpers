@@ -11,3 +11,14 @@ input.input-edited {
 input.input-saving {
   border: solid yellow 1px;
 }
+td.data.col-description.footable-visible {width: 30%;}
+td.col-taxon footable-visible{width: 180px;}
+th#grid-19-th-taxon.ui-widget-header.col-taxon.sortable.footable-visible{width: 180px;}
+/**1=Ordnung, 2=Familie, 3=Gattung, 4=Gruppe, 5=Aggregat, 6=Species, 7=Subspecies
+8=Varietät, 9=Kultivare, 10=Sektion, 11=Group, 12=Sammelart, 13=Form, 14=Unbestimmt **/
+.ord, .fam, .gat, .sec, .sge{text-align:left; padding-left:0px; font-weight:bold; font-size: 120%;}
+.agg, .gru, .gro, .sam, .kmb, .gre{text-align:left; padding-left:10px; font-weight:normal; font-size: 110%;}
+.spe{text-align:left; padding-left:15px; font-weight:normal; font-size: 110%;}
+.ssp, .sse {text-align:left; padding-left:20px; font-weight:normal; font-size: 100%;}
+.var {text-align:left; padding-left:25px; font-weight:normal; font-size: 100%;}
+.for, .cv, .sfo{text-align:left; padding-left:30px; font-weight:normal; font-size: 100%;}

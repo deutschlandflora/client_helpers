@@ -1,0 +1,4 @@
+﻿.import-dialog{border: 1px solid #CCC; margin:0.5em; background-color:rgba(206, 207, 203, 0.19);}
+.import-dialog-desc{padding: 1em; text-align:justify;}
+.image-import-step{position: relative; top:-14px; left:-10px; z-index: 5;}
+label, form label { margin: 8px;}
