@@ -1738,7 +1738,8 @@ HTML;
       // always include the searched name
       $php = '$r="";'."\n".
           'if ("{language}"=="lat" || "{language_iso}"=="lat") {'."\n".
-          '  $r = "<em class=\'taxon-name\'>{taxon}</em>";'."\n".
+		  '  $r = "<em class=\'taxon-name\'>{taxon}&nbsp;{authority}</em>&nbsp;&rArr;&nbsp;<strong>{preferred_taxon}</strong>";'."\n".   //maps4net added authority and preferred_taxon
+          //'  $r = "<em class=\'taxon-name\'>{taxon}</em>";'."\n".
           '} else {'."\n".
           '  $r = "<span class=\'taxon-name\'>{taxon}</span>";'."\n".
           '}'."\n";
@@ -2023,6 +2024,29 @@ JS;
     ), $options));
   }
 
+  
+  /** 
+   * maps4net adds location control as an autocomplete for lookup use
+   * As well as the standard location_autocomplete options, no filter to user but website_id
+   */
+  protected static function get_control_locationlookupautocomplete($auth, $args, $tabAlias, $options) {
+    if (isset($options['extraParams'])) {
+      foreach ($options['extraParams'] as $key => &$value)
+        $value = apply_user_replacements($value);
+      $options['extraParams'] = array_merge($auth['read'], $options['extraParams']);
+    } else 
+      $options['extraParams'] = array_merge($auth['read']);
+    if (empty($options['reportProvidesOrderBy'])||$options['reportProvidesOrderBy']==0) {
+      $options['extraParams']['orderby'] = 'name';
+    }
+    $location_list_args = array_merge(array(
+        'label'=>lang::get('LANG_Location_Label'),
+        'view'=>'detail'
+    ), $options);
+    return data_entry_helper::location_autocomplete($location_list_args);
+  }
+  
+  
   /**
    * Get the location control as an autocomplete.
    *
@@ -2186,6 +2210,31 @@ else
     ), $options));
   }
 
+   /**
+   * Get the occurrence:external_key control.  maps4net added
+   */
+  protected static function get_control_occurrenceexternalkey($auth, $args, $tabAlias, $options) {
+    return data_entry_helper::text_input(array_merge(array(
+      'label' => lang::get('Externe ID des Datensatzes'),
+      'fieldname' => 'occurrence:external_key',
+	   'helpText' => lang::get('Sofern der Datensatz aus einer externen Anwendung kommt, geben Sie bitte die eindeutige Kennung (Datensatz-ID) an. Dies hilft beim Abgleichen der Daten.'),
+      'class' => 'control-width-5'
+    ), $options));
+  }
+  
+  /**
+   * Get the occurrence:training.  maps4net added
+   */
+  protected static function get_control_training($auth, $args, $tabAlias, $options) {
+    return data_entry_helper::training(array_merge(array(
+      'label' => lang::get('Training Mode'),
+      'fieldname' => 'occurrence:training',
+	   'default' => false,
+      'disabled' => false,
+	   'helpText' => lang::get('Records submitted in training mode are segregated from genuine records.')
+    ), $options));
+  }
+  
   /**
    * Get an occurrence attribute control.
    */
@@ -2269,7 +2318,8 @@ else
     $default = isset(data_entry_helper::$entity_to_load['occurrence:record_status']) ?
         data_entry_helper::$entity_to_load['occurrence:record_status'] :
         (isset($args['defaults']['occurrence:record_status']) ? $args['defaults']['occurrence:record_status'] : 'C');
-    $values = array('I', 'C'); // not initially doing V=Verified
+    //$values = array('I', 'C'); // not initially doing V=Verified
+	$values = array('I', 'C','T'); // not initially doing V=Verified,  maps4net  T=Training
     $r = '<label for="occurrence:record_status">'.lang::get('LANG_Record_Status_Label')."</label>\n";
     $r .= '<select id="occurrence:record_status" name="occurrence:record_status">';
     foreach($values as $value){
@@ -2280,6 +2330,7 @@ else
       $r .= '>'.lang::get('LANG_Record_Status_'.$value).'</option>';
     }
     $r .= "</select><br/>\n";
+	$r .= "<p class='helpText'>" .lang::get('LANG_Record_Status_helpText'). "</p>"; //maps4net adds a helpText to the control, Translation in lang/default.php
       return $r;
   }
 
@@ -2308,9 +2359,9 @@ else
   protected static function get_control_zeroabundance($auth, $args, $tabAlias, $options) {
     if ($args['multiple_occurrence_mode']==='single') {
       $options = array_merge(array(
-        'label' => 'Zero Abundance',
+        'label' =>lang::get('Zero Abundance'), //maps4net lang
         'fieldname' => 'occurrence:zero_abundance',
-        'helpText' => 'Tick this box if this is a record that the species was not found.'
+        'helpText' => lang::get('Tick this box if this is a record that the species was not found.')  //maps4net
       ), $options);
       return data_entry_helper::checkbox($options);
     }
@@ -2326,7 +2377,7 @@ else
    */
   protected static function get_control_pendingreleasecheckbox($auth, $args, $tabalias, $options) {
     if (empty($options['label']))
-      $options['label']='Always override Release Status to be P (pending release)?';
+      $options['label']=lang::get('Always override Release Status to be P (pending release)?');  //maps4net lang::get
     $r = '<div><input id="pending_release_status" type="checkbox" checked="checked" name="occurrence:release_status" value="P">'.$options['label'].'</div>';
     data_entry_helper::$javascript .= "
     $('#pending_release_status').change(function() {
