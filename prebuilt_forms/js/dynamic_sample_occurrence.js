@@ -131,3 +131,8 @@ jQuery(document).ready(function docReady($) {
     }
   }
 });
+
+jQuery(document).ready(function docReady($) {
+  $('[data-toggle="tooltip"]').tooltip();
+});
+
