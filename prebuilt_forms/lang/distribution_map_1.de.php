@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Indicia, the OPAL Online Recording Toolkit.
  *
@@ -25,43 +25,41 @@ global $custom_terms;
  *
  * @package	Client
  */
-$custom_terms =  array(
-		
-	'New report' => 'Neuer Bericht',
-	'Species' => 'Art',
-	'Source' => 'Quelle',
-	'Comment' => 'Kommentar',
-	'Filter' => 'Filter',
-	'My records' => 'Meine Daten',
-	'Common Name' => 'Deutscher Name',
-	'Images'=>'Bilder',
-  'Taxon Group' => 'Artgruppe',
-  'Recorder' => 'Kartierer',
-  'Date' => 'Datum',
-	'Select filter' => 'Filter auswählen',
-	'Create a filter' => 'Filter erstellen',
-	'Site name' => 'Naturraum', 
-	'Showing records' => 'Zeige Datensätze',
-	'Download this report' => 'Diesen Bericht downloaden',
-	'Apply'=>'Anwenden',
-	'Modify filter' => 'Filter anpassen',
-  'Reset'=>'Zurücksetzen',
-  'Grid Ref'=>'Raum',
-  'Preferred Name'=>'Wissensch. Name',
-  'Number of Records'=>'Anzahl Daten',
-	'First Recorded Date' => 'Startdatum',
-	'Last Recorded Date' => 'Enddatum',
-	'search' => 'Suche',
-  'first' => 'erste',
-  'prev' => 'vorherige',  
-	'last' => 'letzte',
-  'next' => 'nächste',
-  'My Preferred Locality'=>'Mein bevorzugter Fundort',
-	'My rejected or queried records' => 'Meine zurückgewiesenen Daten',
-	'title'=>'Verbreitungskarte 1',
-      'category' => 'Berichte',      
-      'description'=>'Erstellt eine Verbreitungskarte using Indicia data from GeoServer. Can output a map for a single species '.
-          'or all data from a website. Also features clicking on the data points to see details.',
-	'The distribution map cannot be displayed without a taxon identifier'=>'Die Verbreitungskarte kann nicht ohne eindeutigen Taxname erstellt werden'
-
+$custom_terms =  array(	
+'New report' => 'Neuer Bericht',
+'Species' => 'Art',
+'Source' => 'Quelle',
+'Comment' => 'Kommentar',
+'Filter' => 'Filter',
+'My records' => 'Meine Daten',
+'Common Name' => 'Deutscher Name',
+'Images'=>'Bilder',
+'Taxon Group' => 'Artgruppe',
+'Recorder' => 'Kartierer',
+'Date' => 'Datum',
+'Select filter' => 'Filter auswählen',
+'Create a filter' => 'Filter erstellen',
+'Site name' => 'Naturraum', 
+'Showing records' => 'Zeige Datensätze',
+'Download this report' => 'Diesen Bericht downloaden',
+'Apply'=>'Anwenden',
+'Modify filter' => 'Filter anpassen',
+'Reset'=>'Zurücksetzen',
+'Grid Ref'=>'Raum',
+'Preferred Name'=>'Wissensch. Name',
+'Number of Records'=>'Anzahl Daten',
+'First Recorded Date' => 'Startdatum',
+'Last Recorded Date' => 'Enddatum',
+'search' => 'Suche',
+'first' => 'erste',
+'prev' => 'vorherige',  
+'last' => 'letzte',
+'next' => 'nächste',
+'My Preferred Locality'=>'Mein bevorzugter Fundort',
+'My rejected or queried records' => 'Meine zurückgewiesenen Daten',
+'title'=>'Verbreitungskarte 1',
+'category' => 'Berichte',      
+'description'=>'Erstellt eine Verbreitungskarte using Indicia data from GeoServer. Can output a map for a single species '.
+ 'or all data from a website. Also features clicking on the data points to see details.',
+'The distribution map cannot be displayed without a taxon identifier'=>'Die Verbreitungskarte kann nicht ohne eindeutigen Taxname erstellt werden'
 );
