@@ -452,8 +452,9 @@ SCRIPT;
       $r = str_replace('{content}', self::apply_template('map_panel', $options), $indicia_templates['jsWrap']);
       if ($options['gridRefHintInFooter'] && $options['gridRefHint']) {
         $div = '<div id="map-footer" class="grid-ref-hints ui-helper-clearfix" style="width: ' . $options['width'] . '" ' .
-            'title="When you hover the mouse over the map, the grid reference is displayed here. Hold the minus key or plus key when clicking on the map ' .
-            'to decrease or increase the grid square precision respectively.">';
+            //'title="When you hover the mouse over the map, the grid reference is displayed here. Hold the minus key or plus key when clicking on the map ' .
+            //'to decrease or increase the grid square precision respectively.">';
+			 'title="">';
         if ($options['clickForSpatialRef']) {
           $r .= $div . '<h3>' . lang::get('Click to set map ref') . '</h3>' .
               '<div class="grid-ref-hint hint-minus">' .

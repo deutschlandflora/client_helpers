@@ -1,9 +1,6 @@
 <?php
 
 /**
- * @file
- * Helper class for data imports.
- *
  * Indicia, the OPAL Online Recording Toolkit.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,30 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/gpl.html.
  *
+ * @author Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link https://github.com/indicia-team/warehouse/
- */
-
-/**
- * Link in other required php files.
+ * @link http://code.google.com/p/indicia/
  */
 
 require_once 'lang.php';
 require_once 'helper_base.php';
-
 /**
  * Static helper class that provides methods for dealing with imports.
  */
 class import_helper extends helper_base {
-
   /**
-   * Can host system support remembered mappings?
-   *
-   * Flag set to true if the host system is capable of storing our user's
-   * remembered import mappings for future imports.
-   *
-   * @var bool
-   *
+   * @var bool Flag set to true if the host system is capable of storing our user's remembered import mappings
+   * for future imports.
    */
   private static $rememberingMappings = TRUE;
 
@@ -53,56 +40,46 @@ class import_helper extends helper_base {
    * Outputs an import wizard.
    *
    * The csv file to be imported should be available in the $_POST data, unless
-   * the existing_file option is specified.
-   * Additionally, if there are any preset values which apply to each row in
-   * the import data then you can pass these to the importer in the $_POST
-   * data. For example, you could set taxa_taxon_list:taxon_list_id=3 in the
-   * $_POST data when importing species data to force it to go into list 3.
+   * the existing_file option is specified. Additionally, if there are any
+   * preset values which apply to each row in the import data then you can pass
+   * these to the importer in the $_POST data. For example, you could set
+   * taxa_taxon_list:taxon_list_id=3 in the $_POST data when importing species
+   * data to force it to go into list 3.
    *
    * @param array $options
    *   Options array with the following possibilities:
-   *   * **model** - Required. The name of the model data is being imported
-   *     into.
-   *   * **existing_file** - Optional. The full path on the server to an
-   *     already uploaded file to import.
+   *   * **model** - Required. The name of the model data is being imported into.
+   *   * **existing_file** - Optional. The full path on the server to an already uploaded file to import.
    *   * **auth** - Read and write authorisation tokens.
-   *   * **presetSettings** - Optional associative array of any preset values
-   *     for the import settings. Any settings which have a presetSetting
-   *     specified will be ommitted from the settings form.
-   *   * **occurrenceAssociations** - set to true to enable import of
-   *     associated occurrences or false to disable it. Default false.
-   *   * **fieldMap** - array of configurations of the fields available to
-   *     import, one per survey. The importer will generate a list of all
-   *     possible fields in the database to import into for a given survey.
-   *     This typically includes all the standard "core" database fields such
-   *     as species name and sample date, as well as a list of all custom
-   *     attributes for a survey. This list is quite long and some of the
-   *     default core database fields provided might not be appropriate to your
-   *     survey dataset, leading to possible confusion. So you can use this
-   *     parameter to define database fields and column titles in the
-   *     spreadsheet that will automatically map to them. Provide an array,
-   *     with each array entry being an associative array containing the
-   *     definition of the fields for 1 survey dataset. In the associative
-   *     array provide a value called survey_id to link this definition to a
-   *     survey dataset. Also provide a value called fields containing a list
-   *     of database fields you are defining for this dataset, one per line. If
-   *     you want to link this field to a column title then follow the database
-   *     field name with an equals, then the column title, e.g.
-   *     sample:date=Record date.
-   *   * **onlyAllowMappedFields** - set to true and supply field mappings in
-   *     the fieldMap parameter to ensure that only the fields you have
-   *     specified for the selected survey will be available for selection.
-   *     This allows you to hide all the import fields that you don't want to
-   *     be used for importing into a given survey dataset, thus tidying up the
-   *     list of options to improve ease of use. Default true.
-   *   * **skipMappingIfPossible** - set to true to completely bypass the field
-   *     to column mappings setup stage of the import tool if all the columns
-   *     in the supplied spreadsheet are mapped. Combine this with the fieldMap
-   *     parameter to make predefined import configurations that require little
-   *     effort to use as long as a matching spreadsheet structure is supplied.
+   *   * **presetSettings** - Optional associative array of any preset values for the import
+   *     settings. Any settings which have a presetSetting specified will be ommitted from
+   *     the settings form.
+   *   * **occurrenceAssociations** - set to true to enable import of associated occurrences or false to
+   *     disable it. Default false.
+   *   * **fieldMap** - array of configurations of the fields available to import, one per survey.
+   *     The importer will generate a list of all possible fields in the database to import into
+   *     for a given survey. This typically includes all the standard "core" database fields such
+   *     as species name and sample date, as well as a list of all custom attributes for a survey.
+   *     This list is quite long and some of the default core database fields provided might not be
+   *     appropriate to your survey dataset, leading to possible confusion. So you can use this parameter
+   *     to define database fields and column titles in the spreadsheet that will automatically map to them.
+   *     Provide an array, with each array entry being an associative array containing the definition of the
+   *     fields for 1 survey dataset. In the associative array provide a value called survey_id to link
+   *     this definition to a survey dataset. Also provide a value called fields containing a list of
+   *     database fields you are defining for this dataset, one per line. If you want to link this field
+   *     to a column title then follow the database field name with an equals, then the column title,
+   *     e.g. sample:date=Record date.
+   *   * **onlyAllowMappedFields** - set to true and supply field mappings in the fieldMap parameter
+   *     to ensure that only the fields you have specified for the selected survey will be available for
+   *     selection. This allows you to hide all the import fields that you don't want to be used for
+   *     importing into a given survey dataset, thus tidying up the list of options to improve ease of
+   *     use. Default true.
+   *   * **skipMappingIfPossible** - set to true to completely bypass the field to column mappings setup
+   *     stage of the import tool if all the columns in the supplied spreadsheet are mapped. Combine this
+   *     with the fieldMap parameter to make predefined import configurations that require little effort
+   *     to use as long as a matching spreadsheet structure is supplied.
    *
    * @return string
-   *   HTML for the next page of the importer.
    *
    * @throws \exception
    */
@@ -121,7 +98,7 @@ class import_helper extends helper_base {
     self::add_resource('import');
     // If there is no upload total yet and no import step we know to show the
     // very first screen.
-    if (!isset($_POST['import_step']) && !isset($_POST['total'])) {
+    if (!isset($_POST['import_step'])&&!isset($_POST['total'])) {
       if (count($_FILES) === 1) {
         return self::importSettingsForm($options);
       }
@@ -166,7 +143,13 @@ class import_helper extends helper_base {
   private static function uploadForm($options) {
     $reload = self::get_reload_link_parts();
     $reloadpath = $reload['path'] . '?' . self::array_to_query_string($reload['params']);
-    $r = '<form action="' . $reloadpath . '" method="post" enctype="multipart/form-data">';
+	$r = '<div class="import-dialog">'; //maps4
+    $r .= '<img src="../sites/default/files/pictures/importstep1.png" class="image-import-step">';
+    $r .= '<div class="import-dialog-desc">'.lang::get('Instructions for Import Step 1');
+    $r .= '</br><a href="../sites/default/files/downloads/import_vorlage_wips.csv">Vorlagendatei herunterladen</a></br>';
+    $r .= '<a href="../sites/default/files/downloads/Verantwortungsarten.zip">Taxonomische Referenz herunterladen</a></br>';
+    $r .= '</div></div></br>'; //maps4net
+    $r .= '<form action="' . $reloadpath . '" method="post" enctype="multipart/form-data">';
     $r .= '<label for="upload">' . lang::get('Select *.csv (comma separated values) file to upload') . ':</label>';
     $r .= '<input type="file" name="upload" id="upload"/>';
     $r .= '<input type="Submit" value="' . lang::get('Upload') . '"></form>';
@@ -208,10 +191,14 @@ class import_helper extends helper_base {
 
     $response = self::http_post($request, array());
     if (!empty($response['output'])) {
-      // Get the path back to the same page.
+      // get the path back to the same page
       $reload = self::get_reload_link_parts();
       $reloadpath = $reload['path'] . '?' . self::array_to_query_string($reload['params']);
-      $r = '<div class="page-notice ui-state-highlight ui-corner-all">' . lang::get('import_settings_instructions') . "</div>\n" .
+      //$r = '<div class="page-notice ui-state-highlight ui-corner-all">' . lang::get('import_settings_instructions') . "</div>\n" .
+	  //maps4
+	   $r = '<div class="import-dialog">' . //maps4net
+              '<img src="../sites/default/files/pictures/importstep2.png" class="image-import-step">'.  //maps4net
+              '<div class="import-dialog-desc">'.lang::get('import_settings_instructions')."</div></div></br>\n" . //maps4net
           "<form method=\"post\" id=\"entry_form\" action=\"$reloadpath\" class=\"iform\">\n" .
           "<fieldset><legend>" . lang::get('Import Settings') . "</legend>\n";
       $formArray = json_decode($response['output'], TRUE);
@@ -226,35 +213,31 @@ class import_helper extends helper_base {
       $formOptions = array(
         'form' => $formArray,
         'readAuth' => $options['auth']['read'],
-        'nocache' => TRUE,
+        'nocache' => TRUE
       );
       if (isset($options['presetSettings'])) {
-        // Skip parts of the form we have a preset value for.
+        // skip parts of the form we have a preset value for
         $formOptions['extraParams'] = $options['presetSettings'];
       }
       else {
         $formOptions['extraParams'] = array();
       }
-      // Copy any $_POST data into the extraParams, as this would mean preset
-      // values that are provided by the form which the uploader was triggered
-      // from. E.g. if on a species checklist, this could be this checklists ID
-      // which the user does not need to pick.
+      // copy any $_POST data into the extraParams, as this would mean preset values that are provided by the form which the uploader
+      // was triggered from. E.g. if on a species checklist, this could be this checklists ID which the user does not need to pick.
       foreach ($_POST as $key => $value) {
         $formOptions['extraParams'][$key] = $value;
       }
       $form = self::build_params_form($formOptions, $hasVisibleContent);
       // If there are no settings required, skip to the next step.
-      if (!$hasVisibleContent) {
+      if (!$hasVisibleContent)
         return self::upload_mappings_form($options);
-      }
       $r .= $form;
       if (isset($options['presetSettings'])) {
         // The presets might contain some extra values to apply to every row - must be output as hiddens
         $extraHiddens = array_diff_key($options['presetSettings'], $formArray);
         unset($extraHiddens['password']);
-        foreach ($extraHiddens as $hidden => $value) {
+        foreach ($extraHiddens as $hidden => $value)
           $r .= "<input type=\"hidden\" name=\"$hidden\" value=\"$value\" />\n";
-        }
       }
       // If import behaviour is to be specified by the user, then provide options on the screen for them.
       // If not specified by the user they must be hidden in the background
@@ -296,19 +279,14 @@ class import_helper extends helper_base {
       }
       $r .= '<input type="hidden" name="import_step" value="1" />';
       $r .= '<input type="submit" name="submit" value="' . lang::get('Next') . '" class="ui-corner-all ui-state-default button" />';
-      // Copy any $_POST data into the form, as this would mean preset values
-      // that are provided by the form which the uploader was triggered from.
-      // E.g. if on a species checklist, this could be this checklists ID which
-      // the user does not need to pick.
-      foreach ($_POST as $key => $value) {
+      // copy any $_POST data into the form, as this would mean preset values that are provided by the form which the uploader
+      // was triggered from. E.g. if on a species checklist, this could be this checklists ID which the user does not need to pick.
+      foreach ($_POST as $key => $value)
         $r .= "<input type=\"hidden\" name=\"$key\" value=\"$value\" />\n";
-      }
       $r .= '</fieldset></form>';
       return $r;
-    }
-    else {
-      // No settings form, so output the mappings form instead which is the
-      // next step.
+    } else {
+      // No settings form, so output the mappings form instead which is the next step.
       return self::upload_mappings_form($options);
     }
   }
@@ -374,10 +352,10 @@ class import_helper extends helper_base {
     if (!empty($settings['survey_id'])) {
       self::limitFields($fields, $options, $settings['survey_id']);
     }
-    if (isset($options['importMergeFields']) && is_string($options['importMergeFields'])) {
+    if(isset($options['importMergeFields']) && is_string($options['importMergeFields'])) {
       $options['importMergeFields'] = json_decode($options['importMergeFields']);
     }
-    if (isset($options['synonymProcessing']) && is_string($options['synonymProcessing'])) {
+    if(isset($options['synonymProcessing']) && is_string($options['synonymProcessing'])) {
         $options['synonymProcessing'] = json_decode($options['synonymProcessing']);
     }
     if (isset($options['importMergeFields']) && $options['importMergeFields'] != '' && $options['importMergeFields'] != '{}') {
@@ -437,12 +415,14 @@ class import_helper extends helper_base {
     self::clear_website_survey_fields($unlinked_fields, $settings);
     self::clear_website_survey_fields($unlinked_required_fields, $settings);
     $autoFieldMappings = self::getAutoFieldMappings($options, $settings);
-    // If the user checked the Remember All checkbox need to remember this
-    // setting.
+    // If the user checked the Remember All checkbox need to remember this setting.
     $checkedRememberAll = isset($autoFieldMappings['RememberAll']) ? ' checked="checked"' : '';
+	//maps4net additionel div 
     $r = <<<HTML
+	 <div class="import-dialog">
+     <img src="../sites/default/files/pictures/importstep3.png" class="image-import-step">  
+     <div class="import-dialog-desc">{$t['column_mapping_instructions']}</div></div></br>
 <form method="post" id="entry_form" action="$reloadpath" class="iform">
-  <p>{$t['column_mapping_instructions']}</p>
   <div class="ui-helper-clearfix import-mappings-table">
     <table class="ui-widget ui-widget-content">
       <thead class="ui-widget-header">
@@ -467,11 +447,11 @@ HTML;
 
     $request = str_replace('get_required_fields', 'get_existing_record_options', $request);
     $response = self::http_post($request);
-
+    
     // The $existingDataLookupOptions variable holds the required fields that must be filled in for a particular existing lookup option to work
     // e.g. external_key can't be used unless external_key is filled in
     // However these options come from the importDuplicateCheckCombinations option in the model, some fields from here are not suitable for use
-    // and if left in cause problems. Remove this options (held in $importDuplicateCheckCombinationsToRemove)
+    // and if left in cause problems. Remove this options (held in $importDuplicateCheckCombinationsToRemove) 
     $existingDataLookupOptions = array();
     $importDuplicateCheckCombinations = json_decode($response['output'], TRUE);
     $importDuplicateCheckCombinationsToRemove = array('taxa_taxon_list:taxon_id', 'sample:sample_method_id');
@@ -497,7 +477,7 @@ HTML;
     foreach ($columns as $column) {
       $column = trim($column);
       if (!empty($column)) {
-        $colCount++;
+        $colCount ++;
         $colFieldName = preg_replace('/[^A-Za-z0-9]/', '_', $column);
         $r .= "<tr><td>$column</td><td><select name=\"$colFieldName\" id=\"$colFieldName\">";
         $r .= self::getColumnOptions(
@@ -1408,24 +1388,10 @@ TD;
     fclose($handle);
     foreach($columns as $column) {
       $internalColumn = str_replace(" ", "_", $column);
-      $idx=0;
-      // For UTF with BOM, the first heading seems to get underscores attached to the front of it,
-      // need to strip these and reinstate the array item in a minute as it doesn't get picked up by the $correctedMappings below
-      // (because of the underscores not matching the mappings array).
-      foreach ($mappings as $key => $value) {
-        if ($idx==0) {
-          $trimmedKey=ltrim($key,'_');
-          $theValueFromTrimmedKey=$value;
-        }
-        $idx++;
-      }
       if (isset($mappings[$internalColumn])) {
         $correctedMappings[$internalColumn] = $mappings[$internalColumn];
       }
     }
-    // Re-instate the first item in the array after stripping BOM underscores (see note above)
-    $firstItem = array($trimmedKey => $theValueFromTrimmedKey);
-    $correctedMappings = $firstItem + $correctedMappings;
     // Lookup existing record selections can go on the end.
     // @todo Existing record lookup selections should really go in their own metadata section.
     foreach($mappings as $key => $value) {
