@@ -28,16 +28,16 @@ global $custom_terms;
  */
 $custom_terms = array(
 	'LANG_Edit' => 'Edit',
-	'LANG_SRef_Label' => 'Spatial Ref',
-	'LANG_Location_Label' => 'Location',
-	'LANG_Location_Name' => 'Site Name',
-	'LANG_Georef_Label' => 'Search for Place on Map',
+	'LANG_SRef_Label' => 'Raumbezug',
+	'LANG_Location_Label' => 'Fundort',
+	'LANG_Location_Name' => 'Fundortname',
+	'LANG_Georef_Label' => 'Nach einem Ort suchen',
 	// The search button may be changed by adding an entry for 'search'
 	'LANG_Date' => 'Datum',
-	'LANG_Image_Label' => 'Upload Image',
-  'LANG_Comment' => 'Comment',
-	'LANG_Save' => 'Save',
-  'LANG_Blank_Text' => 'Select...',
-	'validation_required' => 'Dieses Feld ist erforderlich.',
-  'Click here' => 'Hier klicken'
+	'LANG_Image_Label' => 'Bildupload',
+        'LANG_Comment' => 'Kommentar',
+	'LANG_Save' => 'Speichern',
+        'LANG_Blank_Text' => 'Auswahl...',
+	'validation_required' => 'Bitte einen Wert für dieses Feld angeben',
+	  'Click here' => 'Hier klicken'
 );
