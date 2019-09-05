@@ -29,7 +29,7 @@ var setAvailableDownloadFilters;
     var sharingType=$('#download-type').val().substr(0,1);
     // remove the filters available from the select so we can repopulate with the appropriate ones
     $('#download-subfilter option').remove();
-    $('#download-subfilter').append('<option value="">&lt;All available records&gt;</option>');
+	$('#download-subfilter').append('<option value="">&lt;Alle Daten&gt;</option>'); //maps4net All available records
     // Group downloads will use filter of their own rather than users
     if ($('#download-type').val().substr(0,7)!=='R group') {
       $.each(indiciaData.optionalFilters[sharingType], function (filter, title) {
@@ -57,7 +57,7 @@ var setAvailableDownloadFilters;
         function (data) {
           $('select#survey_id option').remove();
           // @todo i18n
-          $('select#survey_id').append('<option value="">&lt;All&gt;</option>');
+          $('select#survey_id').append('<option value="">&lt;Alle&gt;</option>'); //maps4net All 
           $.each(data, function(id, title) {
             id = id.replace(/^survey-/, '');
             $('select#survey_id').append('<option value="'+id+'">'+title+'</option>');
