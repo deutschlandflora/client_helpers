@@ -76,3 +76,8 @@ jQuery(document).ready(function docReady($) {
   });
 });
 
+jQuery(document).ready(function docReady($) {
+  $('a.fancybox').fancybox();
+});
+
+
