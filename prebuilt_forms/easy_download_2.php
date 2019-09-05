@@ -409,7 +409,7 @@ class iform_easy_download_2 {
       'label'=>lang::get('Date field'),
       'fieldname' => 'date_type',
       'lookupValues' => array('recorded'=>lang::get('Field record date'),'input'=>lang::get('Input date'),
-            'edited' => lang::get('Last changed date'), 'verified'=>'Verification status change date'),
+            'edited' => lang::get('Last changed date'), 'verified'=> lang::get('Verification status change date')),
       'helpText' => lang::get('If filtering on date, which date field would you ' .
           'like to filter on?')
     ));
@@ -417,13 +417,15 @@ class iform_easy_download_2 {
       'fieldname' => 'date_from',
       'label' => lang::get('Start Date'),
       'helpText' => lang::get('Leave blank for no start date filter'),
-      'class' => 'control-width-4'
+      'class' => 'control-width-4',
+	  'dateFormat' => 'yy-mm-dd' //maps4net added
     ));
     $r .= data_entry_helper::date_picker(array(
       'fieldname' => 'date_to',
       'label' => lang::get('End Date'),
       'helpText' => lang::get('Leave blank for no end date filter'),
-      'class' => 'control-width-4'
+      'class' => 'control-width-4',
+	  'dateFormat' => 'yy-mm-dd' //maps4net added
     ));
     $r .= '</fieldset>';
     if (!empty($args['custom_formats'])) {
@@ -522,30 +524,28 @@ class iform_easy_download_2 {
       'user_id'=>hostsite_get_user_field('indicia_user_id'),
       'view' => 'detail'
     );
-    if ($params['user_id']) {
-      // Group page integration if user linked to warehouse.
-      if (!empty($_GET['group_id']))
-        $params['group_id']=$_GET['group_id'];
-      if (!empty($args['download_group_types'])) {
-        $params['query'] = json_encode(array('in'=>array(
-          'group_type_id'=>explode(',', $args['download_group_types'])
-        )));
-      }
-      // User has access to a download records from the groups they administer.
-      $groups = data_entry_helper::get_population_data(array(
-        'table'=>'groups_user',
-        'extraParams'=>data_entry_helper::$js_read_tokens + $params
-      ));
-      foreach ($groups as $group) {
-        $title = $group['group_title'] .
-            (isset($group['group_expired']) && $group['group_expired'] === 't' ? ' (' . lang::get('finished') . ')' : '');
-        if (($canDownloadAdministeredGroups && $group['administrator']==='t') || $canDownloadMemberGroups)
-          $r["R group $group[group_id]"] = lang::get(
-              'All records added using a recording form for {1}', $title);
-        if ($args['download_my_records'])
-          $r["R group my $group[group_id]"] = lang::get(
-              'My records added using a recording form for {1}', $title);
-      }
+    // group page integration
+    if (!empty($_GET['group_id']))
+      $params['group_id']=$_GET['group_id'];
+    if (!empty($args['download_group_types'])) {
+      $params['query'] = json_encode(array('in'=>array(
+        'group_type_id'=>explode(',', $args['download_group_types'])
+      )));
+    }
+    // user has access to a download records from the groups they administer
+    $groups = data_entry_helper::get_population_data(array(
+      'table'=>'groups_user',
+      'extraParams'=>data_entry_helper::$js_read_tokens + $params
+    ));
+    foreach ($groups as $group) {
+      $title = $group['group_title'] .
+          (isset($group['group_expired']) && $group['group_expired'] === 't' ? ' (' . lang::get('finished') . ')' : '');
+      if (($canDownloadAdministeredGroups && $group['administrator']==='t') || $canDownloadMemberGroups)
+        $r["R group $group[group_id]"] = lang::get(
+            'All records added using a recording form for {1}', $title);
+      if ($args['download_my_records'])
+        $r["R group my $group[group_id]"] = lang::get(
+            'My records added using a recording form for {1}', $title);
     }
     return $r;
   }
