@@ -101,7 +101,8 @@ jQuery(document).ready(function enablePdf($) {
       margin: indiciaData.printSettings.margin,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        dpi: 192,
+        //dpi: 192,
+        scale: 3,  //scale 2=144 dpi scale has effect dpi not see https://github.com/niklasvh/html2canvas/pull/1087
         letterRendering: true
       },
       jsPDF: {
