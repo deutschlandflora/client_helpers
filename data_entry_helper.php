@@ -875,7 +875,7 @@ JS;
   public static function date_picker($options) {
     $options = self::check_options($options);
     $options = array_merge(array(
-      'dateFormat' => 'dd/mm/yy',
+      'dateFormat' => 'dd.mm.yy',  //maps4net ISO de from dd/mm/yy
       'allowVagueDates'=>FALSE,
       'default' => '',
       'isFormControl' => TRUE
@@ -936,7 +936,7 @@ JS;
     }
     // Check for the special default value of today
     if (isset($options['default']) && $options['default']=='today')
-      $options['default'] = date('d/m/Y');
+       $options['default'] = date('d.m.Y'); //maps4net d/m/Y
 
     // Enforce a class on the control called date
     if (!array_key_exists('class', $options)) {
@@ -2853,10 +2853,10 @@ function(item) {
     if (item.preferred === 't' && item.default_common_name !== item.taxon && item.default_common_name) {
       r += '<br/>' + item.default_common_name;
     } else if (item.preferred==='f' && nameTest && item.preferred_taxon) {
-      synText = item.language_iso==='lat' ? 'syn. of' : '';
+      synText = item.language_iso==='lat' ? 'Syn. zu ' : '';  //maps4net lang
       r += '<br/>[';
       if (item.language_iso==='lat') {
-        r += 'syn. of ';
+         r += 'Syn. zu ';  //maps4net lang
       }
       r += '<em>' + item.preferred_taxon+ '</em>';
       if (speciesIncludeAuthorities) {
@@ -4943,13 +4943,16 @@ HTML;
       'additionalControls' => '',
       'precisions' => array(100, 1000, 2000, 10000, 100000)
     ), $options);
-    $r = '<fieldset><legend>'.lang::get('Sensitivity').'</legend>';
+   //$r = '<fieldset><legend>'.lang::get('Sensitivity').'</legend>';  //original  maps4net Control aus statischem fieldset herausgenommen
+    $r = '<div>'; //maps4net optional class col-md-6
     $r .= data_entry_helper::checkbox(array(
       'id' => 'sensitive-checkbox',
       'fieldname'=>'sensitive',
       'label'=>lang::get('Is the record sensitive?')
     ));
-    // Put a hidden input out, so that when the select control is disabled we get an empty value posted to clear the sensitivity
+     $r .= '</div>'; //maps4net optional 
+    //$r .= '<div class="col-md-6">'; maps4net optional class
+	// Put a hidden input out, so that when the select control is disabled we get an empty value posted to clear the sensitivity
     $r .= '<input type="hidden" name="'.$options['fieldname'].'">';
     $r .= '<div id="sensitivity-controls">';
     $lookupValues = array_intersect_key(array('100'=>lang::get('Blur to 100m'), '1000'=>lang::get('Blur to 1km'), '2000'=>lang::get('Blur to 2km'),
@@ -4960,12 +4963,13 @@ HTML;
       'id' => 'sensitive-blur',
       'label'=>lang::get('Blur record to'),
       'lookupValues' => $lookupValues,
-      'blankText' => 'none',
+      'blankText' => lang::get('none'),  //maps4net
       'helpText' => lang::get('This is the precision that the record will be shown at for public viewing')
     ));
     // output any extra controls which should get disabled when the record is not sensitive.
     $r .= $options['additionalControls'];
-    $r .= '</div></fieldset>';
+    //$r .= '</div></fieldset>';
+	 $r .= '</div>'; // maps4net </fieldset>';
     self::$javascript .= "
 var doSensitivityChange = function(evt) {
   if ($('#sensitive-checkbox').is(':checked')) {
@@ -7223,13 +7227,15 @@ HTML;
       elseif (array_key_exists('success',$response)) {
         $successMessage = lang::get('Thank you for submitting your data.');
         if (function_exists('hostsite_show_message'))
-          hostsite_show_message($successMessage);
+          hostsite_show_message(lang::get('Thank you for submitting your data.')); //ergänzt statt Zeile unten
+          //hostsite_show_message($successMessage);    //maps4net auskommentiert
         else
           $r .= "<div class=\"ui-widget ui-corner-all ui-state-highlight page-notice\">" . $successMessage . "</div>\n";
       }
     }
     else
-      $r .= "<div class=\"ui-state-error ui-corner-all\">$response</div>\n";
+       $r .= "<div class=\"ui-widget ui-corner-all\"></div>\n";  //maps4net $response herausgenommen  ui-state-error ui-corner-all 
+     //$r .= "<div class=\"ui-state-error ui-corner-all\">$response</div>\n";
     return $r;
   }
 
