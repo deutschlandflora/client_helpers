@@ -388,6 +388,7 @@ mapInitialisationHooks.push(function(mapdiv) {
       'table'=>'location_medium',
       'readAuth' => $auth['read'],
       'caption'=>lang::get('File upload'),
+	  'label' => lang::get('Add photo'),
       'readAuth' => $auth['read']
     ), $options));
   }
@@ -495,7 +496,8 @@ mapInitialisationHooks.push(function(mapdiv) {
     ));
     $r .= '<form>';
     $r .= '<input type="button" value="' . lang::get('LANG_Add_Location') . '" ' .
-            'onclick="window.location.href=\'' . hostsite_get_url('node/'.($nid->nid), array('new' => '1')) . '\'">';
+            //'onclick="window.location.href=\'' . hostsite_get_url('node/'.($nid->nid), array('new' => '1')) . '\'">';  //maps4net changed
+			'onclick="window.location.href=\'' . hostsite_get_url('node/'.$nid, array('new' => '1')) . '\'">';
     $r .= '</form>';
     return $r;
   }
