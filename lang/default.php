@@ -321,11 +321,16 @@ $default_terms = array(
   'Records of my species groups in my locality' => 'Meine Artgruppen in meinem bevorzugten Gebiet',
   'Download this report' => 'Diesen Bericht downloaden',
   'Type here to filter.' => 'Eingabefeld zum Filtern nach ',
+  'Type here to filter then press Tab or Return to apply the filter.' => 'Suchbegriff hier eingeben und mit Tab oder Return-Taste filtern',
   ' text begins with ... search. Use * as a wildcard.' => '. Verwenden Sie * als Platzhalter.',
-  "{1} text begins with ... search. Use * as a wildcard." => "{1}. Verwenden Sie * als Platzhalter.",
+  "{1} text begins with ... search. Use * as a wildcard." => "Suche nach {1}. Verwenden Sie * als Platzhalter.",
+  "Search for {1} text begins with .... Use * as a wildcard." => "Suche nach {1}. Verwenden Sie * als Platzhalter.",
  "{1} search. Search for an exact date or use a vague date such as a year to select a range of dates." => "{1}. Suchen Sie nach einem exakten Datum oder geben Sie eine Jahreszahl an.",
+  "Search on {1} - search for an exact date or use a vague date such as a year to select a range of dates." => "Suche nach {1}. Suchen Sie nach einem exakten Datum oder geben Sie eine Jahreszahl an.",
   "{1} search. Either enter an exact number, use >, >=, <, or <= before the number to filter for ".
                       "{1} more or less than your search value, or enter a range such as 1000-2000." => "{1}. Geben Sie eine exakte Zahl an, oder verwenden Sie >, >=, <, oder <= vor der Zahl zum filtern.",
+  "Search on {1} - either enter an exact number, use >, >=, <, or <= before the number to filter for ".
+                      "{1} more or less than your search value, or enter a range such as 1000-2000." => "Suche nach {1}. Geben Sie eine exakte Zahl an, oder verwenden Sie >, >=, <, oder <= vor der Zahl zum filtern.",
   'Use this row to filter the grid' => 'Verwenden Sie diese Zeile zum Filtern der Daten',
   'Since:' => 'Seit',
   'Show activity since:' => 'Zeige Aktivitäten seit',
